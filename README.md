@@ -8,6 +8,8 @@ never Agents.
 ## Install
 
 ```bash
+git clone https://github.com/kaushik912/claude-code-tooling.git
+cd claude-code-tooling/agent-porter
 npm install
 npm link   # optional: makes `agent-porter` runnable directly
 ```
