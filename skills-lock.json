@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "debug-mode": {
+      "source": "doraemonkeys/claude-code-debug-mode",
+      "sourceType": "github",
+      "skillPath": "debug-mode/SKILL.md",
+      "computedHash": "9c73cf3dbe7e86f42ebfce6658f450ad25498dcff89269eff6fa06a227076e6a"
+    }
+  }
+}
