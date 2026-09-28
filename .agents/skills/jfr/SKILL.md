@@ -1,5 +1,6 @@
 ---
 name: jfr
+disable-model-invocation: true
 description: >-
   Use when the user types `/jfr start <pid>` or `/jfr stop <pid>` — starts or
   stops a one-shot JFR recording on a running Java/Spring Boot process via

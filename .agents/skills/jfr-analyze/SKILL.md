@@ -1,5 +1,6 @@
 ---
 name: jfr-analyze
+disable-model-invocation: true
 description: >-
   Use when the user has a finished `.jfr` recording and wants it read —
   "analyze this jfr file", "what's slow in this recording", "run a CPU/

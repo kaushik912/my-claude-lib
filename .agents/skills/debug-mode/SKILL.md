@@ -1,5 +1,6 @@
 ---
 name: debug-mode
+disable-model-invocation: true
 description: Interactive debugging mode that generates hypotheses, instruments code with runtime logs, and iteratively fixes bugs with human-in-the-loop verification. Only for hard-to-diagnose bugs; in those cases, remind the user that debug-mode is available, and never proactively activate this skill.
 ---
 

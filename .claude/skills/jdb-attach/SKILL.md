@@ -1,5 +1,6 @@
 ---
 name: jdb-attach
+disable-model-invocation: true
 description: >-
   Attaches the JDK's `jdb` debugger to a running Java/Spring Boot process
   over its JDWP port, sets breakpoints, and inspects state — no log/println
