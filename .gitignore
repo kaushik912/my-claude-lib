@@ -1,3 +1,5 @@
 db.cnf
 atlassian.cnf
 jira.cnf
+.venv/
+__pycache__/

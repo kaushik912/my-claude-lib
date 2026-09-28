@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Thin launcher: runs my-pick.py with this dir's venv, wherever it's symlinked from.
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+exec "$DIR/.venv/bin/python" "$DIR/my-pick.py" "$@"
