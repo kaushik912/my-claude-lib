@@ -1,6 +1,19 @@
-# my-claude-skills
+# my-claude-lib
 
-Personal collection of coding-agent skills.
+Personal library of tested coding-agent skills, agents, commands and rules.
+
+## Use in a project: `my-pick`
+
+```
+tools/my-pick/install.sh     # once per machine: venv + ~/.local/bin/my-pick
+my-pick [project]            # checkbox UI; symlinks picks into the project
+my-pick . --all              # everything (skills, agents, commands, rules)
+my-pick . --all --kind skills,agents
+my-pick . --all --copy       # copy instead of symlink
+my-pick --list               # what's available + linked status
+```
+
+Skills go to `.agents/skills` + `.claude/skills`; agents/commands/rules go to `.claude/`.
 
 ## Layout
 
@@ -10,11 +23,11 @@ Personal collection of coding-agent skills.
 ## Installing into another project
 
 ```
-npx skills add https://github.com/kaushik912/my-claude-skills --skill <name> --agent <agent>
+npx skills add https://github.com/kaushik912/my-claude-lib --skill <name> --agent <agent>
 ```
 
-e.g. `npx skills add https://github.com/kaushik912/my-claude-skills --skill ticket-spec-agnostic --agent github-copilot`
+e.g. `npx skills add https://github.com/kaushik912/my-claude-lib --skill ticket-spec-agnostic --agent github-copilot`
 
 Omitting `--agent` auto-detects agents installed on your machine (not the same as `--agent '*'`, which force-installs to every supported agent).
 
-Local path also works: `npx skills add /path/to/my-claude-skills --skill <name>`. Use `-l` to list available skills first.
+Local path also works: `npx skills add /path/to/my-claude-lib --skill <name>`. Use `-l` to list available skills first.
