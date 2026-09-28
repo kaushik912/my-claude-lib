@@ -1,5 +1,6 @@
 ---
 name: explain-simply
+disable-model-invocation: true
 description: Explain a concept, error, or piece of code in plain, simple language. Use when the user asks to "explain simply", "simplify this", "help me understand", "dumb it down", "ELI5", or seems lost/confused about something technical.
 ---
 

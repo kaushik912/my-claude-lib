@@ -1,5 +1,6 @@
 ---
 name: pm2bruno
+disable-model-invocation: true
 description: Converts Postman's `pm.*` scripting API calls (pm.collectionVariables, pm.environment, pm.variables, pm.globals, pm.response, pm.request, pm.test, etc.) into Bruno's `bru`/`req`/`res` scripting API. Use this whenever a Bruno collection (.bru files or opencollection.yml/.yml files with `runtime.scripts` / pre-request / post-response / after-response blocks) still contains leftover `pm.*` code — most commonly right after importing a Postman collection with `bru import` or the Bruno desktop app, since neither reliably translates script bodies. Trigger on phrases like "fix this pm script for bruno", "convert postman variables to bruno", "this collection still has pm.* calls", or when a Bruno request errors with "pm is not defined".
 ---
 
