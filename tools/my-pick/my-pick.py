@@ -2,9 +2,12 @@
 """Pick skills/agents/commands/rules from my library repo and symlink (or copy) them into a project.
 
 Usage: my-pick [project] [--list] [--all] [--kind skills,agents] [--copy] [--dry-run]
+       my-pick --scan-back [DIR ...]   # find real copies outside the repo; pick which to merge in
 State = the filesystem: an item is "linked" if the project has a symlink into the repo.
 """
 import argparse
+import glob
+import hashlib
 import os
 import re
 import shutil
@@ -120,6 +123,98 @@ def git_exclude(project, rels, dry):
             f.write("\n".join(new) + "\n")
 
 
+def hash_path(path):
+    """Content hash of a file, or a directory (names + contents, order-independent)."""
+    h = hashlib.sha256()
+    if os.path.isfile(path):
+        h.update(open(path, "rb").read())
+        return h.hexdigest()
+    for dirpath, dirnames, filenames in os.walk(path):
+        dirnames.sort()
+        for fn in sorted(filenames):
+            fp = os.path.join(dirpath, fn)
+            h.update(os.path.relpath(fp, path).encode())
+            h.update(open(fp, "rb").read())
+    return h.hexdigest()
+
+
+def find_target_dirs(root, rel):
+    """Real dirs under root ending in relative path `rel` (e.g. '.claude/skills'), skipping this repo, .git, node_modules."""
+    hits = []
+    for p in glob.glob(os.path.join(root, "**", rel), recursive=True):
+        if not os.path.isdir(p) or os.path.realpath(p).startswith(REPO + os.sep) or os.path.realpath(p) == REPO:
+            continue
+        if "node_modules" in p.split(os.sep) or ".git" in p.split(os.sep):
+            continue
+        hits.append(p)
+    return hits
+
+
+def scan_back(roots=None):
+    """-> list of ('new'|'drift', kind, name, path) for real copies outside the repo that aren't in it, or differ from it."""
+    lib = {(k, n): src for k, n, src, _ in discover()}
+    roots = roots or [os.path.expanduser("~/github_projs"), os.path.expanduser("~/.claude")]
+    found = []
+    for root in roots:
+        root = os.path.abspath(os.path.expanduser(root))
+        is_global = os.path.basename(root.rstrip(os.sep)) == ".claude"
+        for kind, (_, targets) in KINDS.items():
+            if is_global:
+                dirs, skip = [os.path.join(root, kind)], ({"synced"} if kind == "skills" else set())
+            else:
+                dirs, skip = {d for t in targets for d in find_target_dirs(root, t)}, set()
+            for d in dirs:
+                if not os.path.isdir(d):
+                    continue
+                for name in sorted(os.listdir(d)):
+                    p = os.path.join(d, name)
+                    if name in skip or os.path.islink(p):
+                        continue
+                    key = (kind, name)
+                    if key not in lib:
+                        found.append(("new", kind, name, p))
+                    elif hash_path(p) != hash_path(lib[key]):
+                        found.append(("drift", kind, name, p))
+    return found
+
+
+def merge_back(finding, dry):
+    """Copy a scan-back finding into the repo (overwriting a drifted copy), mirroring .claude/skills for skills."""
+    status, kind, name, path = finding
+    dest = os.path.join(REPO, ".agents", "skills", name) if kind == "skills" else os.path.join(REPO, ".claude", kind, name)
+    print(f"  {'~' if status == 'drift' else '+'} {kind}/{name}")
+    if dry:
+        return
+    if os.path.isdir(dest):
+        shutil.rmtree(dest)
+    elif os.path.lexists(dest):
+        os.remove(dest)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    if os.path.isdir(path):
+        shutil.copytree(path, dest)
+    else:
+        shutil.copy2(path, dest)
+    if kind == "skills":
+        mirror = os.path.join(REPO, ".claude", "skills", name)
+        if not (os.path.islink(mirror) and os.path.realpath(mirror) == os.path.realpath(dest)):
+            if os.path.isdir(mirror):
+                shutil.rmtree(mirror)
+            elif os.path.lexists(mirror):
+                os.remove(mirror)
+            os.symlink(os.path.join("..", "..", ".agents", "skills", name), mirror)
+
+
+def choose_scan_back(findings):
+    import questionary  # lazy: plain listing works without it
+    choices = []
+    for f in findings:
+        status, kind, name, path = f
+        desc = describe(path)
+        title = f"[{'NEW' if status == 'new' else 'DRIFT'}] {kind}/{name}" + (f" — {desc[:60]}" if desc else "")
+        choices.append(questionary.Choice(title, value=f))
+    return questionary.checkbox("Space = toggle, Enter = merge selected into the lib", choices=choices).ask()
+
+
 def choose(project, items):
     import questionary  # lazy: --list and --all work without it
     choices = []
@@ -143,7 +238,28 @@ def main():
     ap.add_argument("--kind", help="comma-separated kinds to limit to: skills,agents,commands,rules")
     ap.add_argument("--copy", action="store_true", help="copy instead of symlink (standalone project; not tracked as linked)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--scan-back", nargs="*", metavar="DIR",
+                     help="report real (non-symlink) skills/agents/commands/rules under DIR(s) that are new or "
+                          "drifted vs the lib (default: ~/github_projs + ~/.claude); no writes")
     a = ap.parse_args()
+
+    if a.scan_back is not None:
+        findings = scan_back(a.scan_back or None)
+        if not findings:
+            print("scan-back: nothing new or drifted")
+            return
+        for status, kind, name, p in findings:
+            print(f"[{'NEW  ' if status == 'new' else 'DRIFT'}] {kind:<8} {name:<24} {p}")
+        if not sys.stdin.isatty():
+            return
+        picks = choose_scan_back(findings)
+        if not picks:
+            return
+        for f in picks:
+            merge_back(f, a.dry_run)
+        print("dry run, nothing changed" if a.dry_run
+              else f"merged into {REPO} — review with `git status` there and commit")
+        return
 
     project = os.path.abspath(a.project)
     if not os.path.isdir(project):
