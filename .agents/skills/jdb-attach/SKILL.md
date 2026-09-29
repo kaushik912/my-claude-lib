@@ -2,9 +2,11 @@
 name: jdb-attach
 disable-model-invocation: true
 description: >-
-  Attaches the JDK's `jdb` debugger to a running Java/Spring Boot process
-  over its JDWP port, sets breakpoints, and inspects state — no log/println
-  instrumentation needed.
+  Use when debugging a running Java/Spring Boot app, or when the user asks
+  for a debugging skill/debugger, breakpoint, step-through, stack trace,
+  variable inspection, or "attach jdb". Attaches the JDK's `jdb` debugger to
+  a running JVM over its JDWP port, sets breakpoints, and inspects state — no
+  log/println instrumentation needed.
 license: MIT
 compatibility: "Requires a JDK (jdb ships with every JDK, 8+) on the machine driving the debug session — does not need to match the target JVM's version exactly, but keep major versions close. Target app must be started with JDWP enabled (server=y)."
 metadata:
