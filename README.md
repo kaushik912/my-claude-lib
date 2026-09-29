@@ -13,6 +13,24 @@ my-pick . --all --copy       # copy instead of symlink
 my-pick --list               # what's available + linked status
 ```
 
+### Sync back: `my-pick --scan-back`
+
+Pull skills/agents/commands/rules edited or created outside this repo (in projects or `~/.claude`) back into the lib.
+
+```
+my-pick --scan-back                # scan ~/github_projs + ~/.claude
+my-pick --scan-back ~/some/dir     # scan specific dir(s)
+my-pick --scan-back --dry-run      # preview merge, no writes
+```
+
+1. Scans real (non-symlink) copies, compares by content hash.
+2. Reports `NEW` (not in lib) and `DRIFT` (differs from lib).
+3. Checkbox UI: pick items to merge. Drift overwrites the lib copy.
+4. Skills land in `.agents/skills/` + `.claude/skills` symlink mirror.
+5. Review with `git diff` / `git status`, then commit. Nothing is auto-committed.
+
+Non-TTY: report only, no merge.
+
 ## Install agents into another project: `tools/agent-porter`
 
 CLI to convert/install agent defs between Claude Code (`.claude/agents`) and
