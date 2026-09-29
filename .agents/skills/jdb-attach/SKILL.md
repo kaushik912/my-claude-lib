@@ -1,6 +1,5 @@
 ---
 name: jdb-attach
-disable-model-invocation: true
 description: >-
   Use when debugging a running Java/Spring Boot app, or when the user asks
   for a debugging skill/debugger, breakpoint, step-through, stack trace,
@@ -33,7 +32,7 @@ single-file `javac`-compiled, no attach mode). `jdb` needs none of that.
 
 1. Confirm JDWP port is open (default assumed `5005`, ask if different):
    ```bash
-   nc -z -v -w3 localhost 5005 2>/dev/null || lsof -i :5005
+   lsof -i :5005 || nc -z -v -w3 localhost 5005
    ```
 2. If closed, tell the user to start Spring Boot with JDWP, e.g.:
    ```bash
