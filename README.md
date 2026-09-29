@@ -13,6 +13,13 @@ my-pick . --all --copy       # copy instead of symlink
 my-pick --list               # what's available + linked status
 ```
 
+## Install agents into another project: `tools/agent-porter`
+
+CLI to convert/install agent defs between Claude Code (`.claude/agents`) and
+GitHub Copilot (`.github/agents`) formats, pulling from this repo (or any
+`owner/repo`) via the GitHub API. See
+[tools/agent-porter/README.md](tools/agent-porter/README.md).
+
 Skills go to `.agents/skills` + `.claude/skills`; agents/commands/rules go to `.claude/`.
 
 ## Layout
