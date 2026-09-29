@@ -157,9 +157,14 @@ def scan_back(roots=None):
     found = []
     for root in roots:
         root = os.path.abspath(os.path.expanduser(root))
-        is_global = os.path.basename(root.rstrip(os.sep)) == ".claude"
+        base = os.path.basename(root.rstrip(os.sep))
+        is_global = base in (".claude", ".copilot")
         for kind, (_, targets) in KINDS.items():
-            if is_global:
+            if base in KINDS:  # root is itself a kind dir, e.g. ~/.copilot/skills
+                if kind != base:
+                    continue
+                dirs, skip = [root], set()
+            elif is_global:
                 dirs, skip = [os.path.join(root, kind)], ({"synced"} if kind == "skills" else set())
             else:
                 dirs, skip = {d for t in targets for d in find_target_dirs(root, t)}, set()
