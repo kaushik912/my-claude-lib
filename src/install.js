@@ -5,9 +5,9 @@ import { listRepoAgentFiles, getRepoFile, fetchRaw } from './github.js'
 import { convertClaudeToCopilot } from './convert-claude-to-copilot.js'
 import { defaultDir } from './index.js'
 
-const DEFAULT_REPO = 'kaushik912/my-claude-agents'
+const DEFAULT_REPO = 'kaushik912/my-claude-lib'
 
-// Source repos are always Claude format (the my-claude-agents convention) — install
+// Source repos are always Claude format (the my-claude-lib convention) — install
 // only needs to optionally convert on the way *out* to Copilot, never in.
 export async function runInstall(args) {
   const { values } = parseArgs({

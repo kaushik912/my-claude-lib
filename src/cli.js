@@ -6,7 +6,7 @@ import { runInstall } from './install.js'
 const USAGE = `Usage:
   agent-porter convert --src <claude|copilot> --dest <claude|copilot> [--in <dir>] [--out <dir>] [--file <path>] [--dry-run] [--force]
   agent-porter install (--agent <name> | --all) [--repo <owner>/<repo>] [--dest <claude|copilot>] [--ref <branch>] [--path <dir>] [--out <dir>] [--force] [--dry-run]
-  (--repo defaults to kaushik912/my-claude-agents)`
+  (--repo defaults to kaushik912/my-claude-lib)`
 
 export async function main(argv) {
   const [subcommand, ...rest] = argv

@@ -40,7 +40,7 @@ agent-porter convert --src copilot --dest claude --file some-agent.agent.md --ou
 directory. `--dry-run` prints the plan without writing. `--force` overwrites existing
 output files (default: skip + warn on collision).
 
-### Install — pull from a public GitHub repo (defaults to [my-claude-agents](https://github.com/kaushik912/my-claude-agents))
+### Install — pull from a public GitHub repo (defaults to [my-claude-lib](https://github.com/kaushik912/my-claude-lib))
 
 ```bash
 agent-porter install --agent doc-writer
@@ -49,7 +49,7 @@ agent-porter install --all --dest copilot
 agent-porter install --repo someone-else/their-agents --agent foo   # override the source repo
 ```
 
-`--repo` defaults to `kaushik912/my-claude-agents`. Source repos are expected to hold
+`--repo` defaults to `kaushik912/my-claude-lib`. Source repos are expected to hold
 agents in Claude format (default path `.claude/agents`, override with `--path`).
 `--dest claude` (default) copies as-is; `--dest copilot` converts on the way in. No
 lockfile / drift tracking in v1 — installs are one-shot; re-run to re-fetch (respects
