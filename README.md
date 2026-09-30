@@ -42,8 +42,9 @@ Skills go to `.agents/skills` + `.claude/skills`; agents/commands/rules go to `.
 
 ## Layout
 
-- `.agents/skills/` — canonical content. Agent-agnostic skills live here directly; Claude-specific skills that have an agnostic fork also live here (e.g. `ticket-spec-agnostic`).
-- `.claude/skills/` — Claude Code's view. Agent-agnostic skills are symlinks into `.agents/skills/<name>` (single source of truth, edit once). Skills that genuinely need Claude-only tools/conventions (e.g. `EnterWorktree`, slash-skill refs) live here as real files instead — `spec` and `ticket-spec` are the current examples.
+- `skills/` — canonical content, all skills. Top-level so `gh skill install/preview` discovers them (`gh` ignores hidden dirs and symlinks).
+- `.agents/skills` — symlink to `skills/` (what `my-pick` and `npx skills` read).
+- `.claude/skills/<name>` — per-skill symlinks into `.agents/skills/<name>` (edit once, in `skills/`). Skills adapt to Claude-only tools (e.g. `EnterWorktree`) via conditionals inside the skill — see `ticket-spec`.
 
 ## Installing into another project
 
@@ -51,7 +52,9 @@ Skills go to `.agents/skills` + `.claude/skills`; agents/commands/rules go to `.
 npx skills add https://github.com/kaushik912/my-claude-lib --skill <name> --agent <agent>
 ```
 
-e.g. `npx skills add https://github.com/kaushik912/my-claude-lib --skill ticket-spec-agnostic --agent github-copilot`
+Or with gh: `gh skill install kaushik912/my-claude-lib <name>` (after pushing).
+
+e.g. `npx skills add https://github.com/kaushik912/my-claude-lib --skill ticket-spec --agent github-copilot`
 
 Omitting `--agent` auto-detects agents installed on your machine (not the same as `--agent '*'`, which force-installs to every supported agent).
 

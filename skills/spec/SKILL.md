@@ -1,6 +1,6 @@
 ---
-name: spec-agnostic
-description: Spec-driven feature workflow (spec, then plan, then tasks, then TDD implement), resumable from where it dropped off. Agent-agnostic — no Claude-Code-only tool calls, safe to run under Claude Code, GitHub Copilot CLI, or any coding agent with file read/write and a shell.
+name: spec
+description: Use when building a feature spec-first and wanting it resumable across sessions, or when asked to run the spec/plan/tasks/TDD workflow. Works in any coding agent with file access and a shell.
 disable-model-invocation: true
 ---
 
@@ -73,7 +73,7 @@ Get explicit approval on the task list, flip to `approved`, then start Implement
 
 ## Stage: Implement
 
-One task at a time, top to bottom. For any task with a paired failing-test task, follow red-green-refactor: write the failing test first; run it and confirm it fails for the expected reason (not a typo or setup error); write the minimal code to make it pass; run it and confirm green; then refactor if needed while keeping it green. For non-test-first tasks, just implement and verify (build/run as appropriate).
+One task at a time, top to bottom. For any task with a paired failing-test task, follow red-green-refactor (if the `mattpocock-skills:tdd` skill is available, use it): write the failing test first; run it and confirm it fails for the expected reason (not a typo or setup error); write the minimal code to make it pass; run it and confirm green; then refactor if needed while keeping it green. For non-test-first tasks, just implement and verify (build/run as appropriate).
 
 After a task passes, check its box in `tasks.md` immediately — don't batch checkbox updates, since a drop-off mid-batch is exactly what the resume logic needs to survive. Do not commit automatically; suggest a commit per completed task and let the user decide.
 
