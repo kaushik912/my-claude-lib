@@ -1,0 +1,77 @@
+{
+  "name": "my-claude-lib",
+  "owner": {
+    "name": "kaushik912"
+  },
+  "metadata": {
+    "description": "Personal Claude Code skills, grouped into installable bundles"
+  },
+  "plugins": [
+    {
+      "name": "java-debugging",
+      "description": "Debug and profile running Java/Spring Boot apps: jdb attach, live breakpoints, JFR recording and analysis, hypothesis-driven debug mode",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/jdb-attach",
+        "./skills/debug-live",
+        "./skills/debug-mode",
+        "./skills/jfr",
+        "./skills/jfr-analyze"
+      ]
+    },
+    {
+      "name": "spec-workflow",
+      "description": "Spec-driven workflows: interactive spec/plan/tasks/TDD, unattended feature tickets, and unattended bug-fix tickets, each resumable from disk",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/spec",
+        "./skills/ticket-spec",
+        "./skills/ticket-fix"
+      ]
+    },
+    {
+      "name": "api-testing",
+      "description": "API testing with Bruno: build and debug collections, convert Postman scripts, brainstorm test scenarios",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/bruno",
+        "./skills/pm2bruno",
+        "./skills/scenario-grill-me"
+      ]
+    },
+    {
+      "name": "caveman",
+      "description": "Ultra-compressed communication mode, commit messages, and token usage stats",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/caveman",
+        "./skills/caveman-commit",
+        "./skills/caveman-stats"
+      ]
+    },
+    {
+      "name": "data-tools",
+      "description": "Query Jira and MySQL from the CLI without MCP servers",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/jira-query",
+        "./skills/mysql-query"
+      ]
+    },
+    {
+      "name": "everyday-helpers",
+      "description": "Plain-language explanations and free-tier LLM picks",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/explain-simply",
+        "./skills/freemodelpicker"
+      ]
+    }
+  ]
+}

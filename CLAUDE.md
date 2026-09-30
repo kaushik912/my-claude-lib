@@ -2,8 +2,6 @@ When reporting information to me, be extremely concise and sacrifice grammar for
 
 While writing new skill, usually put in my custom skills folder as it is git-controlled and i can easily manage changes: /home/kaush/github_projs/my-claude-lib
 
-`disable-model-invocation: true` is the simplest way to keep a Skill available without letting your coding agent trigger it automatically. Use it for Skills that should run only when the user explicitly asks, such as deploys, publishes, sends, or anything with side effects.
-
 Always use a venv when running/installing for Python scripts. Never use --break-system-packages or user-wide pip installs.
 
 If a task requires Docker, stop and ask me first — I keep Docker off by default since it slows my PC.
