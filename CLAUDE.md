@@ -21,7 +21,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 ## Conventions
 
 - Skill frontmatter: `name`, `description` (trigger-focused: "Use when ..."), plus `license`, `compatibility`, `metadata` (see `skills/mysql-query/SKILL.md` as the model). `my-pick --list` truncates descriptions at 80 chars; first sentence should carry the trigger.
-- **Skill `description` ≤ 500 characters** (full text, after joining multi-line YAML). Longer ones must be rewritten shorter without losing the main idea (what it does + key trigger phrases). Check: `python3 tools/my-pick/my-pick.py --describe <name>` and count. Vendored skills (`skills-lock.json`) are exempt — don't edit them.
+- Recommended: keep a skill's `description` within ~500 characters (full text, after joining multi-line YAML). If a description runs longer, tighten it without losing the main idea (what it does + key trigger phrases). Vendored skills (`skills-lock.json`) — leave as is.
 - Skills that ship scripts keep them beside `SKILL.md` (e.g. `mysql-query/dbq.sh`). Credential files (`db.cnf`, `atlassian.cnf`, `jira.cnf`) are gitignored — never commit them.
 - Rules in `.claude/rules/` are loaded in every Claude session here: regression-testing (ask before writing a Bruno/RestAssured test after an API bug fix), security, spring, testing-style (Given/When/Then), node, python.
 - Installed elsewhere via `gh skill install kaushik912/my-claude-lib <skill>`, `npx skills add ...`, or `/plugin marketplace add kaushik912/my-claude-lib` — so skills must stay self-contained (no references to files outside their own dir).
