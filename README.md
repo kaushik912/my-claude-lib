@@ -4,7 +4,7 @@ Personal library of tested coding-agent skills, agents, commands and rules.
 
 ## Layout
 
-- `skills/` — all skills (top-level so `gh skill` finds them). `.agents/skills` and `.claude/skills/<name>` are symlinks into it; edit once.
+- `skills/` — all skills (top-level so `gh skill` finds them). `my-pick` links them into projects as `.agents/skills/<name>` and `.claude/skills/<name>`.
 - `.claude/{agents,commands,rules}` — Claude Code agents, commands, rules.
 - `tools/my-pick` — pick items from this lib into a project.
 - `tools/agent-porter` — convert/install agents between Claude and Copilot formats ([README](tools/agent-porter/README.md)).

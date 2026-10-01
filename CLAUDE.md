@@ -8,9 +8,8 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 ## Layout (symlinks matter)
 
-- `skills/<name>/SKILL.md` — **canonical** location for all skills. Edit here only.
-- `.agents/skills` → `../skills`, and `.claude/skills/<name>` → `../../.agents/skills/<name>` are symlinks to it. A new skill needs a `.claude/skills/<name>` link for Claude Code to see it in this repo (`my-pick` does this for target projects; here it is manual).
-- `.claude/{agents,commands,rules}` — real files (Claude agents, slash commands, rules).
+- `skills/<name>/SKILL.md` — **canonical** location for all skills. Edit here only. No `.agents/` or `.claude/skills/` in this repo; `my-pick` creates those links in *target* projects. To use a skill while working inside this repo, run `my-pick . --kind skills` (local links, not committed).
+- `.claude/{agents,commands,rules}` — real files (Claude agents, slash commands, rules); also the `my-pick` sources for those kinds.
 - `.claude-plugin/marketplace.json` — groups skills into installable plugin bundles (`java-debugging`, `spec-ticketing`, `api-testing`, ...) by listing `./skills/<name>` paths. Add new skills to the relevant bundle there.
 - `skills-lock.json` — hashes for skills vendored from third-party repos (e.g. caveman); don't hand-edit.
 

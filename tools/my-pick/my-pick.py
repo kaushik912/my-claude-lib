@@ -18,13 +18,11 @@ REPO = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 # kind -> (repo dir, project dirs to link into). Add a target here to support another tool.
 KINDS = {
-    "skills": (".agents/skills", [".agents/skills", ".claude/skills"]),
+    "skills": ("skills", [".agents/skills", ".claude/skills"]),
     "agents": (".claude/agents", [".claude/agents"]),
     "commands": (".claude/commands", [".claude/commands"]),
     "rules": (".claude/rules", [".claude/rules"]),
 }
-# Claude-only skills that live as real dirs in the repo's .claude/skills (not symlinks to .agents)
-CLAUDE_ONLY_SKILLS = (".claude/skills", [".claude/skills"])
 
 
 def describe(path, full=False):
@@ -55,20 +53,13 @@ def describe(path, full=False):
 
 def discover():
     """-> list of (kind, name, src_path, [project target dirs])"""
-    items, seen = [], set()
-    sources = [(k, d, t) for k, (d, t) in KINDS.items()]
-    sources.append(("skills", *CLAUDE_ONLY_SKILLS))
-    for kind, sub, targets in sources:
+    items = []
+    for kind, (sub, targets) in KINDS.items():
         base = os.path.join(REPO, sub)
         if not os.path.isdir(base):
             continue
         for name in sorted(os.listdir(base)):
-            src = os.path.join(base, name)
-            if kind == "skills" and (name in seen or os.path.islink(src)):
-                continue  # .claude/skills symlinks just mirror .agents/skills
-            if kind == "skills":
-                seen.add(name)
-            items.append((kind, name, src, targets))
+            items.append((kind, name, os.path.join(base, name), targets))
     return items
 
 
@@ -193,9 +184,9 @@ def scan_back(roots=None):
 
 
 def merge_back(finding, dry):
-    """Copy a scan-back finding into the repo (overwriting a drifted copy), mirroring .claude/skills for skills."""
+    """Copy a scan-back finding into the repo (overwriting a drifted copy)."""
     status, kind, name, path = finding
-    dest = os.path.join(REPO, ".agents", "skills", name) if kind == "skills" else os.path.join(REPO, ".claude", kind, name)
+    dest = os.path.join(REPO, "skills", name) if kind == "skills" else os.path.join(REPO, ".claude", kind, name)
     print(f"  {'~' if status == 'drift' else '+'} {kind}/{name}")
     if dry:
         return
@@ -208,14 +199,6 @@ def merge_back(finding, dry):
         shutil.copytree(path, dest)
     else:
         shutil.copy2(path, dest)
-    if kind == "skills":
-        mirror = os.path.join(REPO, ".claude", "skills", name)
-        if not (os.path.islink(mirror) and os.path.realpath(mirror) == os.path.realpath(dest)):
-            if os.path.isdir(mirror):
-                shutil.rmtree(mirror)
-            elif os.path.lexists(mirror):
-                os.remove(mirror)
-            os.symlink(os.path.join("..", "..", ".agents", "skills", name), mirror)
 
 
 def choose_scan_back(findings):
