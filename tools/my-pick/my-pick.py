@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pick skills/agents/commands/rules from my library repo and symlink (or copy) them into a project.
 
-Usage: my-pick [project] [--list] [--all] [--kind skills,agents] [--copy] [--dry-run]
+Usage: my-pick [project] [--list] [--describe NAME] [--all] [--kind skills,agents] [--copy] [--dry-run]
        my-pick --scan-back [DIR ...]   # find real copies outside the repo; pick which to merge in
 State = the filesystem: an item is "linked" if the project has a symlink into the repo.
 """
@@ -27,8 +27,8 @@ KINDS = {
 CLAUDE_ONLY_SKILLS = (".claude/skills", [".claude/skills"])
 
 
-def describe(path):
-    """One-line description from frontmatter `description:` (or first heading)."""
+def describe(path, full=False):
+    """One-line description from frontmatter `description:` (or first heading). full=True: whole multi-line block, no 5-line cap."""
     f = os.path.join(path, "SKILL.md") if os.path.isdir(path) else path
     try:
         lines = open(f, encoding="utf-8").read().splitlines()
@@ -39,7 +39,16 @@ def describe(path):
         if m:
             text = m.group(1).strip()
             if text in (">", ">-", "|", "|-", ""):  # multi-line YAML: join indented lines
-                text = " ".join(l.strip() for l in lines[i + 1:i + 6] if l.startswith(" "))
+                block = []
+                for l in lines[i + 1:] if full else lines[i + 1:i + 6]:
+                    if l.startswith(" "):
+                        block.append(l.strip())
+                    elif l.strip() or not full:
+                        if full:
+                            break  # next frontmatter key / closing ---
+                    elif block:
+                        block.append("")  # blank line inside block
+                text = " ".join(block)
             return text.strip("\"'")
     return next((l.lstrip("# ").strip() for l in lines if l.startswith("#")), "")
 
@@ -239,6 +248,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("project", nargs="?", default=".")
     ap.add_argument("--list", action="store_true", help="print everything available (+ linked status) and exit")
+    ap.add_argument("--describe", metavar="NAME", help="print the full, untruncated description of one item (exact name, else substring matches) and exit")
     ap.add_argument("--all", action="store_true", help="link everything (incl. rules), no prompt")
     ap.add_argument("--kind", help="comma-separated kinds to limit to: skills,agents,commands,rules")
     ap.add_argument("--copy", action="store_true", help="copy instead of symlink (standalone project; not tracked as linked)")
@@ -276,6 +286,14 @@ def main():
         if bad:
             sys.exit(f"unknown kind(s): {', '.join(sorted(bad))}; choose from {', '.join(KINDS)}")
         items = [i for i in items if i[0] in kinds]
+
+    if a.describe:
+        hits = [i for i in items if i[1] == a.describe] or [i for i in items if a.describe.lower() in i[1].lower()]
+        if not hits:
+            sys.exit(f"no item matching '{a.describe}'; try --list")
+        for i in hits:
+            print(f"{i[0]}/{i[1]}\n  {describe(i[2], full=True) or '(no description)'}\n  {i[2]}\n")
+        return
 
     if a.list:
         for i in items:
