@@ -2,14 +2,10 @@
 name: jfr
 disable-model-invocation: true
 description: >-
-  Use when the user types `/jfr start <pid>` or `/jfr stop <pid>` — starts or
-  stops a one-shot JFR recording on a running Java/Spring Boot process via
-  jcmd, walking through it step by step. `start` begins recording with
-  `settings=profile` (CPU + allocation sampling on) and hands control back to
-  the user to go stress-test their app; `stop` dumps the recording to a
-  `.jfr` file, then stops it. Not for live/repeated polling (see
-  jfr-live-monitor) or reading a finished `.jfr` file (see jfr-analyze) —
-  this skill only manages the recording's start/stop lifecycle.
+  Use when the user types `/jfr start <pid>` or `/jfr stop <pid>` — starts or stops a one-shot JFR
+  recording on a running Java/Spring Boot process via jcmd, step by step. `start` begins recording
+  with `settings=profile` and hands back so the user can stress-test; `stop` dumps a `.jfr` file,
+  then stops. Not for live polling (jfr-live-monitor) or reading a finished file (jfr-analyze).
 license: MIT
 compatibility: "Requires jcmd from the same JDK family as the target JVM (or a compatible attach) — JFR.start/JFR.stop work from JDK 11 onward, no JDK 21 needed here (that's only required for reading the file back with `jfr view`, done by the jfr-analyze skill)."
 metadata:

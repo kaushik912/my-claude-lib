@@ -21,15 +21,13 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 ## Conventions
 
 - Skill frontmatter: `name`, `description` (trigger-focused: "Use when ..."), plus `license`, `compatibility`, `metadata` (see `skills/mysql-query/SKILL.md` as the model). `my-pick --list` truncates descriptions at 80 chars; first sentence should carry the trigger.
+- **Skill `description` ≤ 500 characters** (full text, after joining multi-line YAML). Longer ones must be rewritten shorter without losing the main idea (what it does + key trigger phrases). Check: `python3 tools/my-pick/my-pick.py --describe <name>` and count. Vendored skills (`skills-lock.json`) are exempt — don't edit them.
 - Skills that ship scripts keep them beside `SKILL.md` (e.g. `mysql-query/dbq.sh`). Credential files (`db.cnf`, `atlassian.cnf`, `jira.cnf`) are gitignored — never commit them.
 - Rules in `.claude/rules/` are loaded in every Claude session here: regression-testing (ask before writing a Bruno/RestAssured test after an API bug fix), security, spring, testing-style (Given/When/Then), node, python.
 - Installed elsewhere via `gh skill install kaushik912/my-claude-lib <skill>`, `npx skills add ...`, or `/plugin marketplace add kaushik912/my-claude-lib` — so skills must stay self-contained (no references to files outside their own dir).
 
-## Personal rules (carried over from the previous CLAUDE.md)
+## Personal rules
 
 - When reporting information, be extremely concise; sacrifice grammar for concision.
 - New skills go in this repo (git-controlled): `/home/kaush/github_projs/my-claude-lib`.
 - Python scripts: always use a venv. Never `--break-system-packages` or user-wide pip installs.
-- If a task requires Docker, stop and ask first (Docker is off by default).
-- OpenRouter in spring-ai or any AI project needing an API key: use `deepseek/deepseek-v4-flash-latest`.
-- New MCP servers: install to project space (`.mcp.json` via `-s project`), never user space. Also add to `/home/kaush/github_projs/claude-code-tooling/mcp-init/mcp-registry.json` so `mcp-init.py` (in PATH) can reuse it. If the user wants to add an MCP themselves, suggest `mcp-init.py`.

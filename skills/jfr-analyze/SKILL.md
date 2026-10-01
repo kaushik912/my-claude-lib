@@ -2,14 +2,11 @@
 name: jfr-analyze
 disable-model-invocation: true
 description: >-
-  Use when the user has a finished `.jfr` recording and wants it read —
-  "analyze this jfr file", "what's slow in this recording", "run a CPU/
-  memory/GC/IO analysis on this JFR dump", "is this recording CPU-bound or
-  memory-bound". Runs a structured, category-by-category report (CPU,
-  Memory/Allocation, GC, I/O, plus a short Locking/Exceptions bonus pass)
-  entirely with the JDK's own `jfr view`/`jfr print` commands — no extra
-  script, no APM agent. Complements the jfr skill (produces the recording)
-  and jfr-live-monitor (watches a JVM live instead of reading a finished file).
+  Use when the user has a finished `.jfr` recording and wants it read — "analyze this jfr file",
+  "what's slow in this recording", "is this CPU-bound or memory-bound". Runs a category-by-
+  category report (CPU, memory/allocation, GC, I/O, plus locking/exceptions) using only the JDK's
+  `jfr view`/`jfr print` — no extra script or APM agent. Complements jfr (makes the recording) and
+  jfr-live-monitor (watches a live JVM).
 license: MIT
 compatibility: "Requires JDK 21+ on PATH for `jfr view` (added in 21) — point JFR_BIN at one if PATH's isn't. The recording itself can come from any JDK version; JFR's file format is forward-compatible, so a JDK 17/11-recorded .jfr reads fine with a JDK 21+ jfr tool."
 metadata:

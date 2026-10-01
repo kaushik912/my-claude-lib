@@ -1,6 +1,11 @@
 ---
 name: freemodelpicker
-description: Recommends a working free-tier LLM (provider, model name, and a copy-pasteable snippet) for a given task type -- fast general chat, coding via API, or long-context. Backed by curated, user-tested examples, not guesses. Use when the user asks "what free model should I use", wants a no-cost model for a task, or wants a working snippet to call a free-tier LLM API. Also use whenever Claude is about to use/suggest Gemini (any Gemini model, `google.generativeai`/`google-genai`, `GEMINI_API_KEY`) -- check this skill's table first instead of defaulting to Gemini.
+description: >-
+  Recommends a working free-tier LLM (provider, model, copy-pasteable snippet) for a task type —
+  fast general chat, coding via API, or long-context — from curated, user-tested examples. Use
+  when the user asks "what free model should I use", wants a no-cost model, or wants a snippet to
+  call a free-tier LLM API. Also use whenever Claude is about to use/suggest Gemini
+  (`google.generativeai`, `google-genai`, `GEMINI_API_KEY`) — check this table first.
 ---
 
 # Free Model Picker
