@@ -74,6 +74,15 @@
         "./skills/explain-simply",
         "./skills/freemodelpicker"
       ]
+    },
+    {
+      "name": "code-analysis",
+      "description": "Fast codebase analysis via the codebase-memory-mcp code graph: architecture, callers, impact of changes",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/code-graph-analysis"
+      ]
     }
   ]
 }
