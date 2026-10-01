@@ -21,12 +21,14 @@
       ]
     },
     {
-      "name": "spec-workflow",
-      "description": "Spec-driven workflows: interactive spec/plan/tasks/TDD, unattended feature tickets, and unattended bug-fix tickets, each resumable from disk",
+      "name": "spec-ticketing",
+      "description": "Spec-driven workflows and ticketing: interactive spec/plan/tasks/TDD, split a big request into dependent tickets, run them one by one (resumable from disk), plus unattended feature and bug-fix tickets",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/spec",
+        "./skills/ticket-split",
+        "./skills/next-ticket",
         "./skills/ticket-spec",
         "./skills/ticket-fix"
       ]
