@@ -71,7 +71,7 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/explain-simply",
+        "./skills/cavewhat",
         "./skills/freemodelpicker"
       ]
     },
