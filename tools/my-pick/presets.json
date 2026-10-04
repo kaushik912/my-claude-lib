@@ -1,0 +1,7 @@
+{
+  "root": ["next-ticket", "ticket-split"],
+  "ticketing": ["spec", "ticket-split", "next-ticket", "ticket-spec", "ticket-fix"],
+  "caveman": ["caveman", "caveman-commit"],
+  "debug": ["debug-live", "debug-mode"],
+  "java-debug": ["jdb-attach", "jfr", "jfr-analyze"]
+}

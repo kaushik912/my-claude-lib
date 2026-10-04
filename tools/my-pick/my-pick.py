@@ -2,12 +2,16 @@
 """Pick skills/agents/commands/rules from my library repo and symlink (or copy) them into a project.
 
 Usage: my-pick [project] [--list] [--describe NAME] [--all] [--kind skills,agents] [--copy] [--dry-run]
+       my-pick [project] --prune [--yes]   # remove dangling links into the lib (asks first)
+       my-pick [project] --pick NAME... [--preset P...] [--remove NAME...]   # non-interactive, additive
        my-pick --scan-back [DIR ...]   # find real copies outside the repo; pick which to merge in
 State = the filesystem: an item is "linked" if the project has a symlink into the repo.
 """
 import argparse
+import difflib
 import glob
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -15,6 +19,8 @@ import sys
 
 # This script lives at <repo>/tools/my-pick/, so the repo root is two levels up — no config needed.
 REPO = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+PRESETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
 # kind -> (repo dir, project dirs to link into). Add a target here to support another tool.
 KINDS = {
@@ -61,6 +67,41 @@ def discover():
         for name in sorted(os.listdir(base)):
             items.append((kind, name, os.path.join(base, name), targets))
     return items
+
+
+def resolve(items, names):
+    """Map NAME or KIND/NAME tokens to items. Exact match only; exits (nothing linked) on any miss/ambiguity."""
+    out, errs = [], []
+    for tok in names:
+        kind, _, name = tok.rpartition("/")
+        hits = [i for i in items if i[1] == name and (not kind or i[0] == kind)]
+        if len(hits) == 1:
+            out.append(hits[0])
+        elif hits:
+            errs.append(f"'{tok}' is ambiguous ({', '.join(f'{i[0]}/{i[1]}' for i in hits)}); use KIND/NAME or --kind")
+        else:
+            near = difflib.get_close_matches(name, [i[1] for i in items], n=3)
+            errs.append(f"no item '{tok}'" + (f"; did you mean: {', '.join(near)}?" if near else ""))
+    if errs:
+        sys.exit("\n".join(errs) + "\nnothing changed")
+    return out
+
+
+def preset_names(presets):
+    """Expand preset names to item tokens (deduped, order kept); exits on unknown preset."""
+    try:
+        with open(PRESETS) as f:
+            known = json.load(f)
+    except FileNotFoundError:
+        known = {}
+    except json.JSONDecodeError as e:
+        sys.exit(f"bad {PRESETS}: {e}")
+    toks = []
+    for p in presets:
+        if p not in known:
+            sys.exit(f"unknown preset '{p}'; available: {', '.join(sorted(known)) or '(none)'}")
+        toks += [t for t in known[p] if t not in toks]
+    return toks
 
 
 def link_state(project, item):
@@ -121,6 +162,63 @@ def git_exclude(project, rels, dry):
     if new:
         with open(path, "a") as f:
             f.write("\n".join(new) + "\n")
+
+
+def git_unexclude(project, rels, dry):
+    """Drop exclude lines git_exclude added for links that no longer exist."""
+    path = os.path.join(project, ".git", "info", "exclude")
+    if dry or not rels or not os.path.exists(path):
+        return
+    drop = {f"/{r}" for r in rels}
+    lines = open(path).read().splitlines()
+    keep = [l for l in lines if l not in drop]
+    if len(keep) != len(lines):
+        with open(path, "w") as f:
+            f.write("\n".join(keep) + ("\n" if keep else ""))
+
+
+def find_dead(project):
+    """-> [(rel, old_target)] dangling symlinks in our link dirs that pointed into the lib."""
+    dead = []
+    for d in sorted({t for _, targets in KINDS.values() for t in targets}):
+        base = os.path.join(project, d)
+        if not os.path.isdir(base):
+            continue
+        for name in sorted(os.listdir(base)):
+            p = os.path.join(base, name)
+            if os.path.islink(p) and not os.path.exists(p):
+                target = os.path.normpath(os.path.join(base, os.readlink(p)))
+                if target.startswith(REPO + os.sep):
+                    dead.append((os.path.join(d, name), target))
+    return dead
+
+
+def choose_prune(dead):
+    import questionary  # lazy: --yes works without it
+    choices = [questionary.Choice(f"{rel}  ->  {tgt}", value=rel, checked=True) for rel, tgt in dead]
+    return questionary.checkbox("Dead links. Space = toggle, Enter = delete selected", choices=choices).ask()
+
+
+def prune(project, dry, yes):
+    dead = find_dead(project)
+    if not dead:
+        print("prune: no dead links")
+        return
+    if yes:
+        rels = [r for r, _ in dead]
+    elif sys.stdin.isatty():
+        rels = choose_prune(dead)
+        if not rels:
+            print("prune: nothing selected")
+            return
+    else:
+        sys.exit("prune needs a terminal to confirm; use --yes")
+    for rel in rels:
+        print(f"  - {rel}")
+        if not dry:
+            os.remove(os.path.join(project, rel))
+    git_unexclude(project, rels, dry)
+    print(f"prune: dry run, {len(rels)} would be removed" if dry else f"prune: removed {len(rels)}")
 
 
 def hash_path(path):
@@ -233,6 +331,11 @@ def main():
     ap.add_argument("--list", action="store_true", help="print everything available (+ linked status) and exit")
     ap.add_argument("--describe", metavar="NAME", help="print the full, untruncated description of one item (exact name, else substring matches) and exit")
     ap.add_argument("--all", action="store_true", help="link everything (incl. rules), no prompt")
+    ap.add_argument("--pick", nargs="+", metavar="NAME", help="non-interactive: link these items (NAME or KIND/NAME), additive; nothing else is unlinked")
+    ap.add_argument("--preset", nargs="+", metavar="P", help=f"non-interactive: link every item in the named preset(s) from {os.path.basename(PRESETS)}")
+    ap.add_argument("--remove", nargs="+", metavar="NAME", help="non-interactive: unlink these items (only links into this repo)")
+    ap.add_argument("--prune", action="store_true", help="remove dangling symlinks that point into this lib (asks first; combine with --pick/--preset to relink after)")
+    ap.add_argument("--yes", action="store_true", help="skip the --prune confirmation (needed when not on a terminal)")
     ap.add_argument("--kind", help="comma-separated kinds to limit to: skills,agents,commands,rules")
     ap.add_argument("--copy", action="store_true", help="copy instead of symlink (standalone project; not tracked as linked)")
     ap.add_argument("--dry-run", action="store_true")
@@ -262,6 +365,14 @@ def main():
     project = os.path.abspath(a.project)
     if not os.path.isdir(project):
         sys.exit(f"not a directory: {project}")
+    if a.prune:
+        prune(project, a.dry_run, a.yes)
+        if not (a.pick or a.preset or a.remove or a.all or a.list):
+            return
+    elif not a.describe:
+        n = len(find_dead(project))
+        if n:
+            print(f"warning: {n} dead link(s) in {project}; run `my-pick {a.project} --prune`", file=sys.stderr)
     items = discover()
     if a.kind:
         kinds = {k.strip() for k in a.kind.split(",")}
@@ -284,11 +395,32 @@ def main():
             print(f"[{mark}] {i[0]:<8} {i[1]:<24} {describe(i[2])[:80]}")
         return
 
+    if a.pick or a.preset or a.remove:
+        if a.all:
+            sys.exit("--all can't combine with --pick/--preset/--remove")
+        want = resolve(items, (a.pick or []) + (preset_names(a.preset) if a.preset else []))
+        drop = resolve(items, a.remove or [])
+        clash = {(i[0], i[1]) for i in want} & {(i[0], i[1]) for i in drop}
+        if clash:
+            sys.exit(f"both picked and removed: {', '.join(f'{k}/{n}' for k, n in sorted(clash))}")
+        added = []
+        for i in want:
+            if link_state(project, i) and not a.copy:
+                print(f"  = {i[1]} already linked")
+            else:
+                added += link(project, i, a.dry_run, a.copy)
+        for i in drop:
+            unlink(project, i, a.dry_run)
+        if not a.copy:
+            git_exclude(project, added, a.dry_run)
+        print("dry run, nothing changed" if a.dry_run else f"done: {project}")
+        return
+
     if a.all:
         picks = items
     else:
         if not sys.stdin.isatty():
-            sys.exit("interactive only; use --all or --list")
+            sys.exit("interactive only; use --pick/--preset, --all or --list")
         picks = choose(project, items)
         if picks is None:
             sys.exit("cancelled")
