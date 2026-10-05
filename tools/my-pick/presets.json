@@ -1,5 +1,5 @@
 {
-  "root": ["karpathy-guidelines"],
+  "root": ["cavewhat","karpathy-guidelines","bruno","debug-mode"],
   "ticketing": ["spec", "ticket-split", "next-ticket", "ticket-spec", "ticket-fix"],
   "caveman": ["caveman", "caveman-commit"],
   "debug": ["debug-live", "debug-mode"],
