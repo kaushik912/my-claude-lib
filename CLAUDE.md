@@ -15,7 +15,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 ## Tools
 
-- `tools/my-pick/my-pick.py` — pick lib items into a project via symlink. Install once with `tools/my-pick/install.sh` (creates `.venv`, links `~/.local/bin/my-pick`). Flags: `--list`, `--describe NAME` (full untruncated description), `--all`, `--pick NAME...` / `--remove NAME...` / `--preset P...` (non-interactive, additive; presets in `tools/my-pick/presets.json`), `--prune [--yes]` (delete dangling links into the lib, asks first), `--copy`, `--kind`, `--scan-back` (merge edits from projects/`~/.claude` back into the lib; reports `NEW`/`DRIFT`, never auto-commits). Repo root is resolved relative to the script, so no config.
+- `tools/my-pick/my-pick.py` — pick lib items into a project via symlink. Install once with `tools/my-pick/install.sh` (creates `.venv`, links `~/.local/bin/my-pick`). Flags: `--list`, `--describe NAME` (full untruncated description), `--all`, `--pick NAME...` / `--remove NAME...` / `--preset P...` (non-interactive, additive; presets in `tools/my-pick/presets.json`), `--prune [--yes]` (delete dangling links into the lib, asks first; `--dry-run` skips the prompt), `--copy`, `--kind`, `--scan-back` (merge edits from projects/`~/.claude` back into the lib; reports `NEW`/`DRIFT`, never auto-commits). Repo root is resolved relative to the script, so no config.
 - `tools/agent-porter` — Node ≥20 CLI converting agents between `.claude/agents/*.md` and Copilot `.github/agents/*.agent.md`. `npm install` in that dir; usage in its README.
 
 ## Conventions
@@ -23,7 +23,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 - Skill frontmatter: `name`, `description` (trigger-focused: "Use when ..."), plus `license`, `compatibility`, `metadata` (see `skills/mysql-query/SKILL.md` as the model). `my-pick --list` truncates descriptions at 80 chars; first sentence should carry the trigger.
 - Recommended: keep a skill's `description` within ~500 characters (full text, after joining multi-line YAML). If a description runs longer, tighten it without losing the main idea (what it does + key trigger phrases). Vendored skills (`skills-lock.json`) — leave as is.
 - Skills that ship scripts keep them beside `SKILL.md` (e.g. `mysql-query/dbq.sh`). Credential files (`db.cnf`, `atlassian.cnf`, `jira.cnf`) are gitignored — never commit them.
-- Rules in `.claude/rules/` are loaded in every Claude session here: regression-testing (ask before writing a Bruno/RestAssured test after an API bug fix), security, spring, testing-style (Given/When/Then), node, python.
+- Rules in `.claude/rules/` are loaded in every Claude session here: regression-testing (ask before writing a Bruno/RestAssured test after an API bug fix), security, spring, testing-style (Given/When/Then), node, python, karpathy-guidelines, claude-md-upkeep.
 - Installed elsewhere via `gh skill install kaushik912/my-claude-lib <skill>`, `npx skills add ...`, or `/plugin marketplace add kaushik912/my-claude-lib` — so skills must stay self-contained (no references to files outside their own dir).
 
 ## Personal rules
