@@ -82,7 +82,7 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/code-graph-analysis"
+        "./skills/code-graph"
       ]
     }
   ]

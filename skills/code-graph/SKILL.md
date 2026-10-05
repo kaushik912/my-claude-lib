@@ -1,5 +1,5 @@
 ---
-name: code-graph-analysis
+name: code-graph
 description: >-
   Use for codebase analysis questions: "how does X work", "who calls Y", "what breaks if I
   change Z", "explain the architecture", "trace this flow", "find where X is defined", "impact
