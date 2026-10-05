@@ -204,7 +204,7 @@ def prune(project, dry, yes):
     if not dead:
         print("prune: no dead links")
         return
-    if yes:
+    if yes or dry:  # a dry run deletes nothing, so no confirmation needed
         rels = [r for r, _ in dead]
     elif sys.stdin.isatty():
         rels = choose_prune(dead)

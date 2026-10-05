@@ -41,7 +41,8 @@
       "skills": [
         "./skills/bruno",
         "./skills/pm2bruno",
-        "./skills/scenario-grill-me"
+        "./skills/e2e-grill",
+        "./skills/e2e-implement"
       ]
     },
     {

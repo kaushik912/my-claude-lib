@@ -1,50 +1,37 @@
-# Regression Testing for API Bug Fixes
+# Bug Fixes: Failing Test First
 
-When you finish fixing an API-related bug (any project, any language), ask the
-user if they want a regression test for it — unless one already exists. No
-file-type restriction: this is a judgment call about the change, not the file
-touched.
+For any bug fix (any project, any language), prove the bug with a test before
+fixing it:
 
-For proactively discovering test scenarios that aren't tied to a specific bug
-(and as a learning guide to how the API is supposed to behave), use the
-`scenario-griller` agent instead — it's a broader, exploratory workflow with
-its own `docs/api-scenarios.md` tracking, not part of this rule.
+1. **Reproduce**: write a test that captures the bug.
+2. **Red**: run it. It must fail with the bug's symptom, not a setup error
+   (connection refused, wrong path, missing fixture). If it can't fail
+   for the right reason, fix the test first.
+3. **Fix** the code.
+4. **Green**: run the test again. It must pass. Keep the test.
 
-- **Counts as an API bug fix**: request/response handling, status codes, validation,
-  auth/authz, endpoint business logic, error mapping, or contract issues (path/query
-  params, schema) — where a client would now observe corrected behavior.
-- **Doesn't count**: pure refactors, new features/endpoints, UI-only fixes, non-API
-  internal changes, test/docs/perf-only changes.
-- If unsure: "would a client calling this endpoint see different behavior now?" → yes
-  means it applies.
+Skip for typos, docs-only, and config-only changes. If the bug can't be
+reproduced in a test (race, environment-only), say so and ask the user.
 
-## If the user confirms
+Non-API bugs (pure logic): a failing unit test in the project's existing test
+framework. No special shape.
 
-1. **State the happy-path fix in plain English** — what a client sees now vs.
-   before, no jargon.
-2. **List up to 3 closely-related edge cases** worth covering alongside the main
-   fix (e.g. a boundary just next to the one that was buggy, or the same error
-   under a slightly different condition) — plain English, one line each on why
-   it matters. Skip this if none genuinely apply; don't pad the list.
-3. **Confirm** which of these to include, and whether to write it as a Bruno
-   `.bru` test or a RestAssured test. Default by project language — Java/Spring
-   project (pom.xml/build.gradle present) → RestAssured; otherwise → Bruno — but
-   let the user override.
-4. **Dedup check**: grep for a test already covering this endpoint + condition
-   (Bruno: filenames, `meta{}`, `tests{}`, `docs{}`; RestAssured: test
-   class/method names). If one exists, offer to extend it instead of
-   duplicating.
-5. **Draft the file**, show it in full, and confirm before writing. **Never
-   write it silently.**
+If a test already covers the same endpoint and condition, extend it instead of
+adding a duplicate.
 
-If the user declines, drop it for this fix — don't create anything.
+## Java / API bugs
 
-## Bruno shape
+Before writing the test, brainstorm the exact scenario with the user in BDD
+style (Given/When/Then, plain English): what a client sends, what it should
+get back, what it gets today. Then write it with RestAssured, Bruno, Postman,
+or equivalent. Use whatever the project already has. Defaults: Java/Spring
+(pom.xml/build.gradle) → RestAssured; otherwise → Bruno.
+
+### Bruno shape
 
 Find or create the collection (a directory with `bruno.json`). If none exists,
-scaffold one at `regressions/` — confirm with the user first, and check the
-project's actual configured port (server config, README, docker-compose)
-before defaulting to 8080:
+confirm with the user, then scaffold `regressions/`. Check the project's real
+port (server config, README, docker-compose) before defaulting to 8080:
 
 ```
 regressions/
@@ -54,27 +41,25 @@ regressions/
 └── BUG-<id-or-date>-<slug>.bru
 ```
 
-Naming: `regressions/BUG-<id-or-date>-<slug>.bru`, e.g.
-`regressions/BUG-JIRA-123-null-email-500.bru`. `docs{}` block — plain English,
-no jargon/code, and a `Bug:` line with the id if available (else a short
-description):
+Example: `regressions/BUG-JIRA-123-null-email-500.bru`. The `docs{}` block is plain
+English, no jargon or code, with a `Bug:` line:
 
 ```
 docs {
   Bug: <id, e.g. JIRA-123 — or a short description if no id>
   Scenario: user signs up with an email already in use.
-  Before fix: server 500'd. Now: 409 with a clear "email taken" message.
+  Expected: 409 with a clear "email taken" message. Bug: server 500'd.
 }
 ```
 
-## RestAssured shape
+Run: `bru run regressions/<file>.bru --env local` (exit code 1 = failing).
 
-JUnit 5 + `io.rest-assured:rest-assured`, under the project's existing test
-source root (e.g. `src/test/java/**/regression/`). Method named
-`givenBugFixed_when<Action>_then<CorrectBehavior>` (BDD style, per
-`testing-style.md`), with a one-line comment above it noting the bug id (if
-available) or a short description, and `// Before fix:` / `// Now:` alongside
-the usual `// Given` / `// When` / `// Then`:
+### RestAssured shape
+
+JUnit 5 + `io.rest-assured:rest-assured`, under the project's existing test source
+root (e.g. `src/test/java/**/regression/`). Method named
+`given<Condition>_when<Action>_then<Outcome>`, with Given/When/Then comments
+and a one-line bug note above it:
 
 ```java
 // Bug: JIRA-123 — or a short description if no id
@@ -84,7 +69,7 @@ void givenEmailAlreadyInUse_whenSignUp_thenReturns409() {
     userRepository.save(new User("taken@example.com"));
 
     // When / Then
-    // Before fix: server 500'd. Now: 409 with a clear "email taken" message.
+    // Expected: 409 with a clear "email taken" message. Bug: server 500'd.
     given()
         .contentType(ContentType.JSON)
         .body(new SignUpRequest("taken@example.com"))
@@ -96,5 +81,4 @@ void givenEmailAlreadyInUse_whenSignUp_thenReturns409() {
 }
 ```
 
-Runs via the project's existing test runner (`mvn test` / `./gradlew test`) —
-no separate wiring needed.
+Run: `mvn test -Dtest=<Class>` or `./gradlew test --tests <Class>`.
