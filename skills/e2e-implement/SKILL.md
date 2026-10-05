@@ -35,6 +35,12 @@ ask which one. If none exists, ask the user which to use. Suggest a common
 default for the stack (e.g. RestAssured for Java/Spring, Bruno or Playwright
 otherwise), never choose silently.
 
+Check each scenario's Then against what the chosen tool can observe. If it
+depends on real HTTP behavior the tool skips (error bodies, headers,
+container-level errors; e.g. MockMvc skips `/error` dispatch), name that
+blind spot in the draft and offer a real-server option (e.g. Spring
+`RANDOM_PORT` + `TestRestTemplate`).
+
 Check the app is runnable for tests: base URL, port, test profile, required
 services. If it needs Docker or other heavy setup, ask before starting it.
 A wrong port or base URL fails every test with a connection error, which is
@@ -75,8 +81,10 @@ Ask whether to implement another `agreed` scenario or stop.
 
 ## Guidelines
 
-- Never edit a scenario's Given/When/Then. Wrong or unclear scenario → tell the
-  user to fix it in the doc.
+- Never edit a scenario's Given/When/Then on your own. Wrong or unclear scenario →
+  tell the user to fix it in the doc (or edit it only on their go-ahead).
+- Doc is the source of truth. If discussion changes expected behavior, update
+  `docs/scenarios.md` first, then write tests. Never the other way round.
 - Never mark `implemented` without a passing run.
 - Never write files, or start heavy services, without the confirmations above.
 - Keep the scenario ID identical in the doc and the test.

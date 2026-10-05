@@ -78,3 +78,5 @@ Then ask whether to explore another category or stop.
 - Never show more than 5 edge cases in one batch.
 - Statuses used: `proposed`, `agreed`, `implemented in <path>`. Only
   `proposed` is set here.
+- Doc is the source of truth. If later discussion changes a scenario's behavior,
+  update `docs/scenarios.md` first, before any test is written.
