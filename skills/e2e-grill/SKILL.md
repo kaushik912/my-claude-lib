@@ -1,232 +1,80 @@
 ---
-name: scenario-grill-me
+name: e2e-grill
 description: >-
-  Brainstorms API test scenarios for a repo interactively (category by
-  category, happy path first, then top edge cases) and implements a
-  confirmed one as a Bruno or RestAssured test. Use when the user wants to
-  explore/discover API test scenarios proactively, do a "scenario grill",
-  or find edge cases worth testing — not tied to a specific bug fix.
+  Brainstorms end-to-end test scenarios for a repo interactively, one category
+  at a time (happy path first, then top edge cases), and saves them as BDD
+  scenarios in docs/scenarios.md for review. Use when the user wants to
+  explore or discover test scenarios, find edge cases worth testing, or
+  document expected behavior before writing tests. No test code is written.
 license: MIT
-compatibility: "Requires Read/Grep/Glob/Bash/Write-equivalent tool access"
+compatibility: "Requires Read/Grep/Glob/Write-equivalent tool access"
 metadata:
   author: kaushik912
   version: "1.0.0"
   category: development
-  tags: ["api-testing", "bruno", "restassured", "test-scenarios", "regression"]
+  tags: ["e2e", "scenarios", "bdd", "test-planning"]
 ---
 
-Take a repo from "no scenario coverage" to a documented, reviewable regression
-test — one category at a time, never dumping the whole API surface at once.
+Take a repo from "no scenario coverage" to a reviewable list of BDD scenarios,
+one category at a time. Scenarios say *what* should happen, never *how* to
+test it: no test framework, tool, or code. Never dump the whole app at once.
 
-## 1. Resolve the target and check for prior progress
+## 1. Scan
 
-Use the path given, else the current directory. Confirm it looks like an API
-project (controllers, routes, handlers). Look for `docs/api-scenarios.md` — if it
-exists, read it and report what's already there (which categories explored,
-which rows are `not yet tested` vs `implemented in <path>`). Offer to pick up a
-`not yet tested` row (skip to step 5) or explore a new category (continue below).
+Use the path given, else the current directory. Find the entry points: API
+endpoints (controllers/routes/handlers) and, if there is a UI, pages and user
+flows. For each, note inputs and validation, auth guards, and failure paths
+with their outcomes. Skim README/docs and existing tests so you don't
+re-suggest what's covered. Never ask the user for facts the code answers.
 
-## 2. Scan the API — facts only, never ask the user for this
+If `docs/scenarios.md` exists, read it and report which categories are
+explored and each scenario's status. Offer to add to a category or start a new
+one.
 
-For each endpoint: method + path, inputs and their validation, auth guards, and
-failure paths (what's thrown/returned, and the status it maps to).
-Framework-agnostic — look for the *kind* of signal (validation attributes,
-custom exceptions, status annotations), not one framework's exact syntax. Skim
-root-level docs (`README*`, `API.md`, `docs/`) and any existing Bruno/RestAssured
-tests so you don't re-suggest what's covered.
+## 2. Pick a category
 
-## 3. Propose categories
+Group entry points by resource, module, or user journey. Show a short numbered
+list and ask which to explore.
 
-Group endpoints by resource/module — usually falls out of the scan (same
-controller/route file, same URL prefix). Present a short numbered list and ask
-which to explore. Never jump straight to scenarios for the whole API.
+## 3. Discuss
 
-## 4. Discuss the chosen category — happy path first, then top 5 edge cases
+Plain-English happy path first: what the correct flow looks like. Then **at
+most 5** edge cases that matter most, one line each on why. Pick from:
+validation, auth, not found, conflict/idempotency, wrong state, error mapping,
+boundary values, dependency failure, concurrency. Skip what doesn't apply or
+is already covered. Money/data-safety and ambiguous behavior rank first. Flag
+anything that is a guess about intended behavior.
 
-Give a plain-English happy-path overview first, for orientation: what the
-correct request/response cycle looks like. Then show **at most 5** edge-case
-scenarios that matter most, using the angles below (skip whichever don't apply
-to this endpoint — not every angle fits every endpoint):
+## 4. Confirm and save
 
-| Angle | What to look for | Example question |
-|---|---|---|
-| Validation | required/optional fields, type/format/range constraints | What happens with a missing, blank, or wrong-type field? |
-| Auth/authz | missing token, wrong role, expired credential | What happens with no token? With the wrong role? |
-| Not found | references to something that doesn't exist | What happens fetching/acting on an ID that isn't there? |
-| Conflict / idempotency | duplicate requests, replay, reused keys | Does calling it twice cause a duplicate side effect? |
-| Lifecycle / state | action attempted in the wrong state | What happens cancelling something already cancelled? |
-| Error mapping | which exception maps to which status/response | Does every thrown error map to a sensible status code? |
-| Boundary values | empty lists, zero/negative numbers, max length, unicode | What happens at zero quantity? Negative price? |
-| External dependency failure | downstream service down, slow, or returns garbage | What happens if the payment gateway times out? |
-| Concurrency | two requests racing on the same resource | What happens if two requests hit this at once? |
+User drops, edits, or approves. Nothing is written before that. Then add the
+approved scenarios to `docs/scenarios.md`, one `##` section per category, one
+block per scenario:
 
-Skip anything already covered by an existing test, noting it instead of
-re-listing it. If more than 5 genuinely apply, keep the 5 that matter most
-(money/data-safety and undocumented/ambiguous behavior outrank routine checks)
-and say how many were left out. One line per scenario on why it matters,
-flagging anything that's a guess about intended behavior rather than confirmed
-from code/docs.
+```markdown
+## Sign-up
 
-## 5. Confirm
-
-Ask the user to drop, edit, or approve the list. Nothing gets written until
-they've confirmed.
-
-## 6. Persist confirmed scenarios to `docs/api-scenarios.md`
-
-One `##` section per category explored so far (across all runs), each with a
-table:
-
-| ID | Scenario | Why it matters | Status |
-|---|---|---|---|
-
-**ID scheme**: assign each new row the next sequential `SCN-<NNN>` (zero-padded,
-e.g. `SCN-001`) — scan the whole file for the highest existing ID first, don't
-restart per category. IDs are permanent once assigned: never renumber or reuse
-one, even if its scenario is later dropped. Status is `not yet tested` when just
-confirmed. If the file already exists, update/append only the current
-category's section — leave every other section untouched. Do this **before**
-moving on, regardless of whether the user wants to implement one now — the list
-must never exist only in the conversation.
-
-Then ask whether to implement one of these now or stop for now.
-
-## 7. Pick Bruno or RestAssured
-
-Infer from the project: a Java/Spring project (pom.xml/build.gradle present) →
-RestAssured; otherwise → Bruno. Let the user override either way.
-
-**Dedup check first**: grep for a test already covering this endpoint +
-condition (Bruno: filenames, `meta{}`, `tests{}`, `docs{}`; RestAssured: test
-class/method names). If one exists, say so and offer to extend it instead of
-duplicating.
-
-### Bruno shape
-
-Find or create the collection (a directory with `bruno.json`). If none exists,
-scaffold one at `regressions/` — confirm with the user first:
-
-```
-regressions/
-├── bruno.json
-├── environments/
-│   └── local.bru
-└── <scenario files> ...
+### SCN-004: Email already taken
+Status: proposed
+Why: duplicate accounts break login
+- Given a user exists with email a@x.com
+- When a new user signs up with a@x.com
+- Then the response is 409 with an "email taken" message
 ```
 
-`bruno.json`: `{ "version": "1", "name": "regressions", "type": "collection" }`
+- IDs are `SCN-NNN`: next after the highest in the file, never reused or
+  renumbered, even if the scenario is dropped later.
+- New scenarios start as `Status: proposed`. Moving to `agreed` is a human
+  decision (review by the team). Never set it yourself.
+- Steps are plain English, no code, no tool names.
+- Edit only the current category's section. Save before moving on, even if the
+  user stops here.
 
-`environments/local.bru` — check the project's actual configured port (server
-config, README, docker-compose) before defaulting to 8080; a wrong port fails
-every test with "connection refused," not a real signal:
-```
-vars {
-  baseUrl: http://localhost:8080
-}
-```
-
-File: `<ID>-<slug>.bru`, e.g. `SCN-004-checkout-conflict.bru`:
-```
-meta {
-  name: <short human name>
-  type: http
-  seq: <next number in the folder>
-}
-
-<method> {
-  url: {{baseUrl}}<path>
-  body: json
-  auth: <none | bearer | inherit>
-}
-
-headers {
-  Content-Type: application/json
-}
-
-body:json {
-  { ...request payload... }
-}
-
-tests {
-  test("<what this proves>", () => {
-    expect(res.status).to.equal(<expected>);
-  });
-}
-
-docs {
-  Scenario ID: <SCN-NNN — matches the row in docs/api-scenarios.md>
-  Scenario: <what request this sends and under what conditions>
-  Expected: <the correct behavior this test asserts>
-}
-```
-
-The `docs{}` block is mandatory — plain English, no jargon, no code. Optionally
-offer a `make regressions` Makefile target once a collection exists and the
-user wants to run it on demand:
-
-```makefile
-.PHONY: regressions
-regressions:
-	npx --yes @usebruno/cli run regressions/ --env local --recursive \
-		--output regressions-results.xml --format junit
-```
-
-### RestAssured shape
-
-JUnit 5 + `io.rest-assured:rest-assured`, under the project's existing test
-source root (e.g. `src/test/java/**/regression/`). One `@Test` per scenario,
-method named `given<Condition>_when<Action>_then<Outcome>` (matches this repo's
-BDD convention — `testing-style.md`), using RestAssured's own
-`given()/when()/then()` fluent calls plus `// Given` / `// When` / `// Then`
-comments:
-
-```java
-@Test
-void given<Condition>_when<Action>_then<Outcome>() {
-    // Given
-    // ...setup...
-
-    // When / Then
-    given()
-        .contentType(ContentType.JSON)
-        .body(payload)
-    .when()
-        .post("<path>")
-    .then()
-        .statusCode(<expected>)
-        .body("<jsonPath>", equalTo(<expected>));
-}
-```
-
-Add a one-line comment above the method: `// Scenario ID: <SCN-NNN> — <why it
-matters>`. Runs via the project's existing test runner (`mvn test` /
-`./gradlew test`) — no separate wiring needed.
-
-## 8. Confirm before writing
-
-Show the full drafted file and ask the user to approve, edit, or drop it.
-**Never write it silently.**
-
-## 9. Write it, then update `docs/api-scenarios.md`
-
-Change this scenario's Status from `not yet tested` to `implemented in <path>`
-— leave every other row untouched. This keeps the doc and the tests in sync so
-a later resume never re-derives or re-implements the same scenario.
-
-Ask if they want to implement another `not yet tested` row now, or stop.
+Then ask whether to explore another category or stop.
 
 ## Guidelines
 
-- Never write a test file, scaffold a collection, or create/edit a Makefile
-  without asking first.
-- Always persist confirmed scenarios to `docs/api-scenarios.md` before the turn
-  ends, even if the user stops without implementing any of them.
-- Never show more than 5 edge-case scenarios in one batch.
-- Plain English in every scenario description/`docs{}` block — no
-  framework/library jargon.
-- Every scenario's ID must match in all three places it appears: the `ID`
-  column in `docs/api-scenarios.md`, the test file/method name, and its
-  docs/comment block — never let these drift apart.
-- For a scenario tied to a specific bug fix rather than proactive exploration,
-  defer to the `regression-testing` rule instead — it has its own lighter,
-  bug-fix-specific flow and doesn't use `docs/api-scenarios.md`.
+- Never write test code or edit `docs/scenarios.md` before the user confirms.
+- Never show more than 5 edge cases in one batch.
+- Statuses used: `proposed`, `agreed`, `implemented in <path>`. Only
+  `proposed` is set here.
