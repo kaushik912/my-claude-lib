@@ -73,7 +73,8 @@
       "strict": false,
       "skills": [
         "./skills/cavewhat",
-        "./skills/freemodelpicker"
+        "./skills/freemodelpicker",
+        "./skills/karpathy-guidelines"
       ]
     },
     {
