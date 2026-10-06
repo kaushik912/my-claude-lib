@@ -15,7 +15,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 ## Tools
 
-- `tools/my-pick/my-pick.py` — pick lib items into a project via symlink. Install once with `tools/my-pick/install.sh` (creates `.venv`, links `~/.local/bin/my-pick`). Flags via `--help`; presets in `tools/my-pick/presets.json`. `--prune` deletes dangling links (asks first); `--scan-back` merges edits back into the lib, never auto-commits. Repo root is resolved relative to the script, so no config.
+- `tools/my-pick/my-pick.py` — pick lib items into a project via symlink. Install once with `tools/my-pick/install.sh` (creates `.venv`, links `~/.local/bin/my-pick`). Flags via `--help`; presets in `tools/my-pick/presets.json`. Picks are recorded in the target's `.my-pick.json` (commit it, gitignore the links); `my-pick sync` recreates them on another machine/CI, `--update` bumps the pinned ref, `--copy` copies real files for zero-tooling repos. `--prune` deletes dangling links (asks first); `--scan-back` merges edits back into the lib, never auto-commits. Repo root is resolved relative to the script, so no config.
 - `tools/agent-porter` — Node ≥20 CLI converting agents between `.claude/agents/*.md` and Copilot `.github/agents/*.agent.md`. `npm install` in that dir; usage in its README.
 
 ## Conventions
