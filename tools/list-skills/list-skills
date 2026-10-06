@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# List Claude skills (dirs containing SKILL.md) with their one-line description.
+# Edit ROOTS to add/remove locations. Plugin skills excluded (cache has stale versions).
+#
+# Usage:
+#   list-skills                    # skills in ROOTS (user, current project, my-claude-lib)
+#   list-skills <plugin>           # skill names inside one installed plugin
+#
+# Examples:
+#   list-skills                    # run from a project dir to include its .claude/skills
+#   list-skills mattpocock-skills  # -> Source + "Skills (25) ask-matt, code-review, ..."
+#   list-skills nope               # -> "plugin 'nope' not found (see: claude plugin list)"
+#   claude plugin list             # find valid plugin names
+#   claude plugin details <name>   # full inventory + token cost (what <plugin> mode wraps)
+#   list-skills | grep -i grill    # find a skill by keyword
+ROOTS=(
+  "$HOME/.claude/skills"
+  "$PWD/.claude/skills"
+  "$HOME/github_projs/my-claude-lib/skills"
+)
+
+# With a plugin name: delegate to the CLI, show only its skills line.
+if [ -n "$1" ]; then
+  claude plugin details "$1" | grep -E '^ *(Skills|Source)' || echo "plugin '$1' not found (see: claude plugin list)"
+  exit
+fi
+
+for root in "${ROOTS[@]}"; do
+  [ -d "$root" ] || continue
+  echo "== $root"
+  for f in "$root"/*/SKILL.md; do
+    [ -e "$f" ] || continue
+    name=$(basename "$(dirname "$f")")
+    # description may be inline or folded (">" / ">-") onto the next line
+    desc=$(awk '/^description:/ {sub(/^description: */,""); if ($0 ~ /^>-?$/) {getline; sub(/^ +/,"")} print; exit}' "$f" | cut -c1-80)
+    printf '  %-28s %s\n' "$name" "$desc"
+  done
+done

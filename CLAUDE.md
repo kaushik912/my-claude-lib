@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Personal library of coding-agent skills, agents, commands and rules — content, not an app. No build, lint or test suite. The only code is two small CLIs under `tools/`.
+Personal library of coding-agent skills, agents, commands and rules — content, not an app. No build, lint or test suite. The only code is small CLIs/scripts under `tools/`.
 
 ## Layout (symlinks matter)
 
@@ -17,6 +17,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 - `tools/my-pick/my-pick.py` — pick lib items into a project via symlink. Install once with `tools/my-pick/install.sh` (creates `.venv`, links `~/.local/bin/my-pick`). Flags via `--help`; presets in `tools/my-pick/presets.json`. Picks are recorded in the target's `.my-pick.json` (commit it, gitignore the links); `my-pick sync` recreates them on another machine/CI, `--update` bumps the pinned ref, `--copy` copies real files for zero-tooling repos. `--prune` deletes dangling links (asks first); `--scan-back` merges edits back into the lib, never auto-commits. Repo root is resolved relative to the script, so no config.
 - `tools/agent-porter` — Node ≥20 CLI converting agents between `.claude/agents/*.md` and Copilot `.github/agents/*.agent.md`. `npm install` in that dir; usage in its README.
+- `tools/list-skills/` — bash script listing local skills, or a plugin's skills (`list-skills <plugin>`). `install.sh` / `uninstall.sh` link/unlink it in `~/.local/bin`.
 
 ## Conventions
 
