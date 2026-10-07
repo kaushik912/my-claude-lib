@@ -4,6 +4,7 @@ from pathlib import Path
 
 from . import tui
 from .doctor_flow import run_doctor
+from .vendor_flow import run_vendor
 from .catalog import ResolveError, installed_keys, load_catalog, resolve_key
 from .kinds import KINDS, Ctx
 from .plan import make_plan
@@ -22,11 +23,13 @@ def parse_args(argv):
     ap.add_argument("--no-tui", action="store_true", help="additive install of --profile/--pick, no prompt")
     ap.add_argument("--list", action="store_true", help="print catalog with installed marks and exit")
     ap.add_argument("--doctor", action="store_true", help="check the project's skills-lock.json vs project copies and the lib; offer update/delete/keep")
+    ap.add_argument("--vendor", action="store_true", help="refresh vendored skills in the lib from vendors.txt (npx skills lines); --yes applies new skills only")
     ap.add_argument("--agent", default="claude-code")
     ap.add_argument("--global", dest="global_", action="store_true", help="user-level instead of project")
     ap.add_argument("--yes", action="store_true", help="skip confirmation")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--lib", type=Path, default=LIB, help=argparse.SUPPRESS)
+    ap.add_argument("--vendors-file", type=Path, default=LIB / "vendors.txt", help=argparse.SUPPRESS)
     ap.add_argument("--profiles-file", type=Path, default=TOOL_DIR / "profiles.json", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
 
@@ -34,6 +37,11 @@ def parse_args(argv):
 def main(argv=None) -> int:
     a = parse_args(argv)
     project = Path(a.project).resolve()
+    if a.vendor:
+        if not (a.yes or a.dry_run or sys.stdin.isatty()):
+            print("error: --vendor needs a terminal; pass --yes to add new skills only", file=sys.stderr)
+            return 2
+        return run_vendor(a.lib, a.vendors_file, yes=a.yes, dry_run=a.dry_run)
     if a.doctor:
         if a.global_:
             print("error: --doctor is project-only", file=sys.stderr)

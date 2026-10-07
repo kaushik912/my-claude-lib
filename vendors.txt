@@ -1,0 +1,4 @@
+# Vendored skills. One `npx skills add` per line; run `skills-tui --vendor` to refresh skills/ from these.
+# -g/-a/-y are ignored (runs in a temp project). End a line with `# bundle=<name>` to pick the marketplace bundle.
+npx skills add https://github.com/JuliusBrussee/caveman --skill caveman caveman-commit caveman-stats  # bundle=caveman
+npx skills add https://github.com/doraemonkeys/claude-code-debug-mode --skill debug-mode -g  # bundle=java-debugging

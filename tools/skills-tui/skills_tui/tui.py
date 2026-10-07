@@ -88,3 +88,23 @@ def doctor_choose(issues: list[Issue]) -> dict[str, str] | None:
             return None
         decisions[i.name] = ans
     return decisions
+
+
+def vendor_confirm(change) -> bool:
+    verb = "Add" if change.status == "new" else "Update"
+    return bool(questionary.confirm(f"{verb} {change.name}?", default=False).ask())
+
+
+def pick_bundle(name: str, bundles: list[str]) -> tuple[str, str] | None:
+    """Returns (bundle, description-for-new-bundle) or None to leave unbundled."""
+    new = "__new__"
+    choices = [questionary.Choice(b, b) for b in bundles] + [questionary.Choice("➕ new bundle", new), questionary.Choice("skip (not recommended)", None)]
+    pick = questionary.select(f"Marketplace bundle for {name}", choices=choices).ask()
+    if pick is None:
+        return None
+    if pick != new:
+        return pick, ""
+    bundle = (questionary.text("New bundle name").ask() or "").strip()
+    if not bundle:
+        return None
+    return bundle, (questionary.text("Bundle description").ask() or "").strip()
