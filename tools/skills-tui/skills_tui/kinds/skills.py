@@ -2,21 +2,9 @@
 import json
 from pathlib import Path
 
-import yaml
-
-from .base import Action, Ctx, Item
+from .base import Action, Ctx, Item, frontmatter
 
 SKILLS_DIR = Path(".claude/skills")
-
-
-def _frontmatter(text: str) -> dict:
-    if not text.startswith("---"):
-        return {}
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}
-    data = yaml.safe_load(parts[1])
-    return data if isinstance(data, dict) else {}
 
 
 class SkillsKind:
@@ -27,7 +15,7 @@ class SkillsKind:
         vendored = set(json.loads(lock.read_text()).get("skills", {})) if lock.is_file() else set()
         items = []
         for md in sorted((lib / "skills").glob("*/SKILL.md")):
-            desc = " ".join(str(_frontmatter(md.read_text()).get("description", "")).split())
+            desc = " ".join(str(frontmatter(md.read_text()).get("description", "")).split())
             name = md.parent.name
             items.append(Item(self.name, name, desc, "vendored" if name in vendored else "mine"))
         return items

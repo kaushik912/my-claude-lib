@@ -39,7 +39,7 @@ def main(argv=None) -> int:
 
     if a.list:
         for i in catalog:
-            print(f"{'*' if i.key in have else ' '} {i.key:30} {i.origin:9} {i.description[:50]}")
+            print(f"{'*' if i.key in have else ' '} {i.key:36} {i.origin:9} {i.description[:50]}")
         return 0
 
     try:
