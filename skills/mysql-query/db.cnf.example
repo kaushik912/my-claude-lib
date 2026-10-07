@@ -1,6 +1,6 @@
-# Copy to ./db.cnf (project root), fill in real values, then:
-#   chmod 600 db.cnf
-#   echo "db.cnf" >> .gitignore
+# Template. Copy it ANYWHERE you like (outside the repo is best), fill in real values, then:
+#   chmod 600 /path/to/db.cnf
+#   export DBQ_CNF=/path/to/db.cnf     # dbq.sh has no default location
 [client]
 user=yourusername
 password=yourpassword

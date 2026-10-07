@@ -4,7 +4,7 @@
 #   ./jira.sh POST "/rest/api/3/issue" '{"fields":{...}}'
 set -euo pipefail
 
-CNF="${JIRA_CNF:-./jira.cnf}"
+CNF="${JIRA_CNF:-}"
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
     echo "Usage: $0 <GET|POST|PUT|DELETE> \"<path>\" ['<json_body>']" >&2
@@ -20,8 +20,8 @@ if [[ ! "$METHOD" =~ ^(GET|POST|PUT|DELETE)$ ]]; then
     exit 1
 fi
 
-if [ ! -f "$CNF" ]; then
-    echo "ERROR: config file not found: $CNF (set JIRA_CNF or create ./jira.cnf)" >&2
+if [ -z "$CNF" ] || [ ! -f "$CNF" ]; then
+    echo "ERROR: JIRA_CNF must point to an existing config file (got: '${CNF}'). Copy jira.cnf.example anywhere, fill it in, then: export JIRA_CNF=/path/to/jira.cnf" >&2
     exit 1
 fi
 

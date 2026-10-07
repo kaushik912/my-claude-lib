@@ -114,7 +114,7 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.giti
 ## Notes
 
 - Skills always install with `-a claude-code codex`: **real files in `.agents/skills`, symlinks in `.claude/skills`** (open-source layout). There is no `--agent` flag.
-- Re-adding a skill (doctor `update`) replaces its dir: project-only files such as `db.cnf` are wiped. Also, such a file makes the skill look `modified`/`conflict` forever (known limitation).
+- Re-adding a skill (doctor `update`) replaces its dir: any project-only file inside it is wiped (and makes the skill look `modified`). Keep config outside skill dirs; skills read it via env vars (`DBQ_CNF`, `JIRA_CNF`).
 - Bare names that exist in two kinds (e.g. `karpathy-guidelines` is both a skill and a rule) are ambiguous: use `skills/karpathy-guidelines`.
 
 ## Muscle-memory cheat sheet

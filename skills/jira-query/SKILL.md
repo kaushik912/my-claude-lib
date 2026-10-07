@@ -18,8 +18,9 @@ metadata:
 ## Overview
 
 Call the Jira Cloud REST API straight from the CLI using `jira.sh`, without
-an MCP server dependency. Credentials live in a local, gitignored `jira.cnf`
-— never inline on the command line (avoids leaking the API token into shell
+an MCP server dependency. Credentials live in a config file you create from the
+shipped `jira.cnf.example`, keep wherever you like (outside the repo is best) and
+point to with `JIRA_CNF` — never inline on the command line (avoids leaking the API token into shell
 history / process listing).
 
 This is not read-only — issue creation/updates are a normal use case.
@@ -30,10 +31,10 @@ issuing a POST/PUT (creates/mutates real tickets).
 
 ```bash
 export JIRA_API_TOKEN="your_api_token"   # add to ~/.bashrc to persist
-cp jira.cnf.example jira.cnf
+cp jira.cnf.example /path/of/your/choice/jira.cnf   # anywhere, outside the repo is best
 # fill in JIRA_SITE / JIRA_EMAIL; JIRA_TOKEN already references JIRA_API_TOKEN
-chmod 600 jira.cnf
-echo "jira.cnf" >> .gitignore
+chmod 600 /path/of/your/choice/jira.cnf
+export JIRA_CNF=/path/of/your/choice/jira.cnf        # add to ~/.bashrc to persist
 chmod +x jira.sh
 ```
 
@@ -41,8 +42,8 @@ Get an API token at https://id.atlassian.com/manage-profile/security/api-tokens.
 
 ## Usage
 
-`jira.cnf` is expected in the cwd. If it lives elsewhere, set
-`JIRA_CNF=/path/to/jira.cnf`.
+There is no default config location: `JIRA_CNF` must point at your config file
+(see Setup).
 
 ```bash
 # Search issues (JQL)
@@ -73,7 +74,7 @@ before showing the user.
 
 ## Rules
 
-- Requires `jira.cnf` next to the script (or `JIRA_CNF` pointing at one) —
+- Requires `JIRA_CNF` pointing at a config file (no default location) —
   never pass the token inline.
 - `JIRA_TOKEN` in `jira.cnf` may reference an already-exported env var (e.g.
   `JIRA_TOKEN="$JIRA_API_TOKEN"`) instead of a raw literal — `jira.cnf` is
@@ -87,9 +88,9 @@ before showing the user.
 
 ## Troubleshooting
 
-- `ERROR: config file not found` — no `jira.cnf` in cwd; create it from
-  `jira.cnf.example` or set `JIRA_CNF`.
+- `ERROR: JIRA_CNF must point to an existing config file` — create the file from
+  `jira.cnf.example` and `export JIRA_CNF=/path/to/jira.cnf`.
 - `curl: command not found` / `jq: command not found` — install them
   (`apt install curl jq`, `brew install curl jq`, etc.).
-- 401/403 from the API — check `JIRA_EMAIL`/`JIRA_TOKEN` in `jira.cnf`; token
+- 401/403 from the API — check `JIRA_EMAIL`/`JIRA_TOKEN` in your `JIRA_CNF` file; token
   may be expired/revoked.

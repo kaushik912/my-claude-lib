@@ -18,16 +18,19 @@ metadata:
 ## Overview
 
 Query a project's MySQL database straight from the CLI using `dbq.sh`, without an
-MCP server or DB driver dependency. Credentials live in a local, gitignored
-`db.cnf` — never inline on the command line (avoids leaking passwords into shell
-history / process listing).
+MCP server or DB driver dependency. Credentials live in a config file you create
+from the shipped `db.cnf.example`, keep wherever you like (outside the repo is best)
+and point to with `DBQ_CNF` — never inline on the command line (avoids leaking
+passwords into shell history / process listing).
 
 Read-only by design: `dbq.sh` enforces SELECT/SHOW/DESCRIBE/EXPLAIN only, blocks
 multi-statement queries, and auto-caps unbounded SELECTs at 50 rows.
 
 ## Usage
 
-`db.cnf` is expected in the cwd. If it lives elsewhere, set `DBQ_CNF=/path/to/db.cnf`.
+There is no default config location: copy `db.cnf.example` (shipped beside this
+skill) anywhere, fill it in, `chmod 600` it, and set `DBQ_CNF=/path/to/db.cnf`
+(add to `~/.bashrc` to persist).
 
 ```bash
 ./dbq.sh "SELECT id, name FROM users WHERE active = 1"
@@ -45,7 +48,7 @@ multi-statement queries, and auto-caps unbounded SELECTs at 50 rows.
   per call.
 - Unbounded SELECTs get `LIMIT 50` appended automatically (override with
   `DBQ_LIMIT=200 ./dbq.sh "..."`).
-- Requires `db.cnf` next to the script (or `DBQ_CNF` pointing at one) — never pass
+- Requires `DBQ_CNF` pointing at a config file (no default location) — never pass
   `-u/-p` credentials inline.
 - If the script errors "only read-only queries allowed", rephrase as a SELECT/SHOW
   instead of asking to modify data.
@@ -55,8 +58,8 @@ multi-statement queries, and auto-caps unbounded SELECTs at 50 rows.
 
 ## Troubleshooting
 
-- `ERROR: config file not found` — no `db.cnf` in cwd; create it from
-  `db.cnf.example` or set `DBQ_CNF`.
+- `ERROR: DBQ_CNF must point to an existing config file` — create the file from
+  `db.cnf.example` and `export DBQ_CNF=/path/to/db.cnf`.
 - `mysql: command not found` — install a MySQL client (`apt install mysql-client`,
   `brew install mysql-client`, etc.).
-- Access denied — check `user`/`password`/`host`/`database` in `db.cnf`.
+- Access denied — check `user`/`password`/`host`/`database` in the file `DBQ_CNF` points to.

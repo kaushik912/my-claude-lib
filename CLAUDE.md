@@ -24,7 +24,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 - Skill frontmatter: `name`, `description` (trigger-focused: "Use when ..."), plus `license`, `compatibility`, `metadata` (see `skills/mysql-query/SKILL.md` as the model). `my-pick --list` truncates descriptions at 80 chars; first sentence should carry the trigger.
 - Recommended: keep a skill's `description` within ~500 characters (full text, after joining multi-line YAML). If a description runs longer, tighten it without losing the main idea (what it does + key trigger phrases). Vendored skills (`skills-lock.json`) — leave as is.
-- Skills that ship scripts keep them beside `SKILL.md` (e.g. `mysql-query/dbq.sh`). Credential files (`db.cnf`, `atlassian.cnf`, `jira.cnf`) are gitignored — never commit them.
+- Skills that ship scripts keep them beside `SKILL.md` (e.g. `mysql-query/dbq.sh`). Skills never ship real credentials or a default config path: they ship `*.cnf.example` and read the real file from an env var (`DBQ_CNF`, `JIRA_CNF`). `db.cnf`, `atlassian.cnf`, `jira.cnf` stay gitignored — never commit them.
 - Installed elsewhere via `gh skill install kaushik912/my-claude-lib <skill>`, `npx skills add ...`, or `/plugin marketplace add kaushik912/my-claude-lib` — so skills must stay self-contained (no references to files outside their own dir).
 
 ## Personal rules

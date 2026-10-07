@@ -2,7 +2,7 @@
 # Read-only MySQL query runner. Usage: ./dbq.sh "SELECT * FROM users"
 set -euo pipefail
 
-CNF="${DBQ_CNF:-./db.cnf}"
+CNF="${DBQ_CNF:-}"
 LIMIT="${DBQ_LIMIT:-50}"
 
 if [ "$#" -ne 1 ]; then
@@ -23,8 +23,8 @@ if echo "$QUERY" | grep -q ';.*[^[:space:]]'; then
     exit 1
 fi
 
-if [ ! -f "$CNF" ]; then
-    echo "ERROR: config file not found: $CNF (set DBQ_CNF or create ./db.cnf)" >&2
+if [ -z "$CNF" ] || [ ! -f "$CNF" ]; then
+    echo "ERROR: DBQ_CNF must point to an existing config file (got: '${CNF}'). Copy db.cnf.example anywhere, fill it in, then: export DBQ_CNF=/path/to/db.cnf" >&2
     exit 1
 fi
 
