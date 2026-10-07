@@ -5,7 +5,7 @@ TUI to pick skills from this lib's curated catalog (`skills/` + vendored ones in
 ```
 tools/skills-tui/install.sh      # venv + ~/.local/bin/skills-tui link
 tools/skills-tui/uninstall.sh    # remove link + venv (never touches skills)
-skills-tui [project]             # TUI: pick profiles, then toggle skills
+skills-tui [project]             # TUI: profiles -> kind menu (n/total) -> per-kind list; type to filter, installed first
 skills-tui --list                # catalog, * = installed in project
 skills-tui --profile battletested --no-tui   # additive, no prompt
 skills-tui --pick spec bruno --no-tui --yes
