@@ -155,3 +155,9 @@ def test_given_risky_files_when_new_then_flagged_in_review(env, capsys):
 
 def test_cli_vendor_without_terminal_or_yes_fails_fast(lib, tmp_path):
     assert cli.main([str(tmp_path), "--lib", str(lib), "--vendor"]) == 2
+
+
+def test_cli_vendor_defaults_to_vendors_txt_of_the_given_lib(lib, tmp_path, capsys):
+    (lib / "vendors.txt").write_text("rm -rf /\n")
+    assert cli.main([str(tmp_path), "--lib", str(lib), "--vendor", "--yes"]) == 2
+    assert "vendors.txt" in capsys.readouterr().out

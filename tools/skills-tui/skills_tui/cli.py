@@ -29,7 +29,7 @@ def parse_args(argv):
     ap.add_argument("--yes", action="store_true", help="skip confirmation")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--lib", type=Path, default=LIB, help=argparse.SUPPRESS)
-    ap.add_argument("--vendors-file", type=Path, default=LIB / "vendors.txt", help=argparse.SUPPRESS)
+    ap.add_argument("--vendors-file", type=Path, default=None, help=argparse.SUPPRESS)  # default: <lib>/vendors.txt
     ap.add_argument("--profiles-file", type=Path, default=TOOL_DIR / "profiles.json", help=argparse.SUPPRESS)
     return ap.parse_args(argv)
 
@@ -41,7 +41,7 @@ def main(argv=None) -> int:
         if not (a.yes or a.dry_run or sys.stdin.isatty()):
             print("error: --vendor needs a terminal; pass --yes to add new skills only", file=sys.stderr)
             return 2
-        return run_vendor(a.lib, a.vendors_file, yes=a.yes, dry_run=a.dry_run)
+        return run_vendor(a.lib, a.vendors_file or a.lib / "vendors.txt", yes=a.yes, dry_run=a.dry_run)
     if a.doctor:
         if a.global_:
             print("error: --doctor is project-only", file=sys.stderr)
@@ -91,4 +91,9 @@ def main(argv=None) -> int:
         if input("Apply? [y/N] ").strip().lower() != "y":
             return 1
     ctx = Ctx(project, a.lib, a.agent, a.global_)
-    return run(build_actions(plan, KINDS, ctx), a.dry_run)
+    try:
+        actions = build_actions(plan, KINDS, ctx)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    return run(actions, a.dry_run)

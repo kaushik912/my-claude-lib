@@ -69,3 +69,8 @@ def test_shipped_registry_has_all_kinds():
     from skills_tui.kinds import KINDS as REG
 
     assert [k.name for k in REG] == ["skills", "rules", "commands", "agents"]
+
+
+def test_given_global_flag_with_copy_kind_pick_when_cli_then_clean_error_exit_2(kind, clib, tmp_path, capsys):
+    rc = cli.main([str(tmp_path), "--lib", str(clib), "--no-tui", "--global", "--pick", f"{kind.name}/style"])
+    assert rc == 2 and "project-only" in capsys.readouterr().err
