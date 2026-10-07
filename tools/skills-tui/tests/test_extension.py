@@ -1,18 +1,18 @@
-"""A new kind plugs in without touching core: fake `rules` kind driven through cli.main."""
+"""A new kind plugs in without touching core: fake `widgets` kind driven through cli.main."""
 from skills_tui import cli
 from types import SimpleNamespace
 
 from skills_tui.kinds import Action, Ctx, Item
 
 
-class FakeRules:
-    name = "rules"
+class FakeKind:
+    name = "widgets"
 
     def __init__(self):
         self.log = []
 
     def catalog(self, lib):
-        return [Item("rules", "style", "code style", "mine"), Item("rules", "alpha", "clashes with skill", "mine")]
+        return [Item("widgets", "style", "code style", "mine"), Item("widgets", "alpha", "clashes with skill", "mine")]
 
     def installed(self, project):
         return set()
@@ -25,9 +25,9 @@ class FakeRules:
 
 
 def test_given_extra_kind_when_profile_mixes_kinds_then_each_kind_acts(lib, tmp_path, monkeypatch):
-    fake = FakeRules()
+    fake = FakeKind()
     monkeypatch.setattr(cli, "KINDS", [*cli.KINDS, fake])
-    (lib / "p.json").write_text('{"mix": {"skills": ["beta"], "rules": ["style"]}}')
+    (lib / "p.json").write_text('{"mix": {"skills": ["beta"], "widgets": ["style"]}}')
     calls = []
     fake_exec = lambda cmd, cwd: calls.append(cmd) or SimpleNamespace(returncode=0)  # noqa: E731
     monkeypatch.setattr(cli, "Ctx", lambda *a: Ctx(*a, exec_=fake_exec))
@@ -40,7 +40,7 @@ def test_given_extra_kind_when_profile_mixes_kinds_then_each_kind_acts(lib, tmp_
 
 
 def test_given_clashing_bare_name_when_pick_then_ambiguous_but_qualified_works(lib, tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(cli, "KINDS", [*cli.KINDS, FakeRules()])
+    monkeypatch.setattr(cli, "KINDS", [*cli.KINDS, FakeKind()])
     base = [str(tmp_path), "--lib", str(lib), "--no-tui", "--dry-run", "--pick"]
     assert cli.main([*base, "alpha"]) == 2
-    assert cli.main([*base, "rules/alpha"]) == 0
+    assert cli.main([*base, "widgets/alpha"]) == 0

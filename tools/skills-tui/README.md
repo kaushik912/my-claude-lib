@@ -15,5 +15,5 @@ skills-tui --pick spec bruno --no-tui --yes
 - Profiles: `profiles.json`, keyed by kind: `{"skills": [...], "rules": [...], "extends": [...]}`. Picking one pre-ticks its items.
 - Add a kind (rules, commands, agents): write `skills_tui/kinds/<x>.py` implementing `Kind` (`catalog`, `installed`, `add`, `remove` -> `Action`s; copy or shell out), add it to `KINDS` in `kinds/__init__.py`. Core is untouched; see `tests/test_extension.py`. Items are `kind/name` keys; bare names work in `--pick` when unambiguous.
 - Flags: `--agent`, `--global`, `--dry-run`, `--yes`.
-- Modules: `kinds/` (extension seam; `skills` is the only kind so far), `catalog`, `profiles`, `plan` (pure) · `runner` · `tui`, `cli`.
+- Modules: `kinds/` (extension seam; `skills` via npx, `rules` copied from `.claude/rules/` — real files, project-only), `catalog`, `profiles`, `plan` (pure) · `runner` · `tui`, `cli`.
 - Tests: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest`.
