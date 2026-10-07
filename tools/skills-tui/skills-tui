@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Launcher: runs the tool with its own venv, whatever the cwd or symlink location.
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PYTHONPATH="$DIR" exec "$DIR/.venv/bin/python" -m skills_tui "$@"

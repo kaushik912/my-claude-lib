@@ -1,0 +1,6 @@
+{
+  "core": {"skills": ["karpathy-guidelines", "cavewhat"]},
+  "battletested": {"extends": ["core"], "skills": ["bruno", "debug-mode", "spec"]},
+  "ticketing": {"skills": ["spec", "ticket-split", "next-ticket", "ticket-spec", "ticket-fix"]},
+  "java-debug": {"skills": ["jdb-attach", "debug-live", "debug-mode", "jfr", "jfr-analyze"]}
+}

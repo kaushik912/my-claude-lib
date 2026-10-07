@@ -3,3 +3,4 @@ atlassian.cnf
 jira.cnf
 .venv/
 __pycache__/
+.pytest_cache/

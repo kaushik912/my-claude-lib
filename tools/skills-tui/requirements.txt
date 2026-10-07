@@ -1,0 +1,2 @@
+questionary>=2,<3
+PyYAML>=6,<7
