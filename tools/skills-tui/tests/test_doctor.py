@@ -3,25 +3,23 @@ import os
 from pathlib import Path
 
 from skills_tui.dirhash import tree_hash
-from skills_tui.doctor import (CONFLICT, CORRUPT, DANGLING, DEAD_SOURCE, FOREIGN, LEGACY, LOCK_STALE, MODIFIED, ORPHAN,
+from skills_tui.doctor import (CONFLICT, CORRUPT, DANGLING, DEAD_SOURCE, FOREIGN, LOCK_STALE, MODIFIED, ORPHAN,
                                OUTDATED, UNLINKED, UNTRACKED, diagnose)
 from tests.conftest import write_skill
 
 
-def installed(project: Path, lib: Path, name: str, *, lock=True, legacy=False):
-    """Simulate `npx skills add -a claude-code codex`: real files in .agents/skills, symlink in .claude/skills.
-    legacy=True: old layout, real copy in .claude/skills only."""
+def installed(project: Path, lib: Path, name: str, *, lock=True):
+    """Simulate `npx skills add -a claude-code codex`: real files in .agents/skills, symlink in .claude/skills."""
     src = lib / "skills" / name
-    dest = project / (".claude/skills" if legacy else ".agents/skills") / name
+    dest = project / ".agents/skills" / name
     dest.mkdir(parents=True)
     for f in src.rglob("*"):
         if f.is_file():
             (dest / f.relative_to(src)).parent.mkdir(parents=True, exist_ok=True)
             (dest / f.relative_to(src)).write_bytes(f.read_bytes())
-    if not legacy:
-        link = project / ".claude/skills" / name
-        link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to(Path("../../.agents/skills") / name)
+    link = project / ".claude/skills" / name
+    link.parent.mkdir(parents=True, exist_ok=True)
+    link.symlink_to(Path("../../.agents/skills") / name)
     if lock:
         write_lock(project, {name: entry(project, lib, name)})
 
@@ -134,12 +132,6 @@ def test_given_no_lock_and_no_dirs_when_diagnose_then_healthy(lib, tmp_path):
 
 # ---- layout: real files in .agents/skills, symlink in .claude/skills ----
 
-def test_given_legacy_real_copy_in_claude_only_when_diagnose_then_legacy_recommend_migrate(lib, tmp_path):
-    installed(tmp_path, lib, "alpha", legacy=True)
-    (issue,) = diagnose(tmp_path, lib)
-    assert issue.state == LEGACY and issue.recommended == "update"
-
-
 def test_given_claude_link_missing_when_diagnose_then_unlinked_recommend_relink(lib, tmp_path):
     installed(tmp_path, lib, "alpha")
     (tmp_path / ".claude/skills/alpha").unlink()
@@ -162,12 +154,6 @@ def test_given_claude_link_points_elsewhere_when_diagnose_then_unlinked(lib, tmp
     assert states(tmp_path, lib) == {"alpha": UNLINKED}
 
 
-def test_given_content_changed_in_legacy_layout_when_diagnose_then_content_state_wins(lib, tmp_path):
-    installed(tmp_path, lib, "alpha", legacy=True)
-    (lib / "skills/alpha/SKILL.md").write_text("new")
-    assert states(tmp_path, lib) == {"alpha": OUTDATED}
-
-
-def test_given_untracked_in_agents_dir_when_diagnose_then_reported_once_ignoring_claude_link(lib, tmp_path):
+def test_given_untracked_skill_when_diagnose_then_reported_once_ignoring_claude_link(lib, tmp_path):
     installed(tmp_path, lib, "alpha", lock=False)
     assert [i.name for i in diagnose(tmp_path, lib)] == ["alpha"]

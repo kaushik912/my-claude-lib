@@ -5,7 +5,7 @@ from pathlib import Path
 from .base import Action, Ctx, Item, frontmatter
 
 CANON_DIR = Path(".agents/skills")  # real files
-CLAUDE_DIR = Path(".claude/skills")  # symlinks into CANON_DIR (real dirs only in legacy installs)
+CLAUDE_DIR = Path(".claude/skills")  # symlinks into CANON_DIR
 
 
 class SkillsKind:
@@ -22,12 +22,8 @@ class SkillsKind:
         return items
 
     def installed(self, project: Path) -> set[str]:
-        names: set[str] = set()
-        for base in (CANON_DIR, CLAUDE_DIR):
-            root = project / base
-            if root.is_dir():
-                names |= {p.parent.name for p in root.glob("*/SKILL.md")}
-        return names
+        root = project / CANON_DIR
+        return {p.parent.name for p in root.glob("*/SKILL.md")} if root.is_dir() else set()
 
     def add(self, names, ctx: Ctx) -> list[Action]:
         return [self._npx(ctx, ["add", str(ctx.lib), "-s", *names, "-a", *ctx.agents, "-y"])]

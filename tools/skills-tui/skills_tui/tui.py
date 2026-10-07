@@ -52,7 +52,7 @@ def pick_items(catalog: list[Item], installed: set[str], preticked: set[str]) ->
 UPDATE_LABELS = {
     "outdated": "update from lib", "modified": "revert to lib", "conflict": "overwrite with lib",
     "lock-stale": "refresh lock", "dangling": "restore from lib", "untracked": "adopt (reinstall from lib)",
-    "dead-source": "re-link to this lib", "legacy-layout": "migrate to .agents/skills", "not-linked": "re-create .claude/skills symlink",
+    "dead-source": "re-link to this lib", "not-linked": "re-create .claude/skills symlink",
 }
 
 

@@ -71,16 +71,7 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
   - Expect `orphan debug-mode`, `outdated mysql-query`; plan `update: mysql-query`, `delete: debug-mode`.
 - **D5 Apply recommended:** D4 without `--dry-run`; a second `--doctor --yes` says `healthy`.
   - Same on D2: `--doctor --yes` re-creates the `.claude/skills/bruno` symlink.
-- **D6 Migrate an old-style install:**
-  ```bash
-  mkdir $R/legacy && cd $R/legacy
-  npx skills add $L -s spec -a claude-code -y        # old layout: real copy in .claude/skills only
-  skills-tui --doctor --yes --dry-run                # legacy-layout spec: real copy only in .claude/skills
-  skills-tui --doctor --yes                          # migrates
-  ls -l .claude/skills                               # spec -> ../../.agents/skills/spec
-  skills-tui --doctor --yes                          # healthy
-  ```
-- **D7 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
+- **D6 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
 
 ## V. Vendor (always against `lib-copy`)
 

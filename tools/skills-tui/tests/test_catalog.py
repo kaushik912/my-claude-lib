@@ -27,8 +27,8 @@ def test_given_dir_without_skill_md_when_load_then_ignored(lib):
 
 
 def test_given_installed_skills_when_scan_then_keys(tmp_path):
-    write_skill(tmp_path / ".claude/skills", "alpha")
-    (tmp_path / ".claude/skills/notskill").mkdir()
+    write_skill(tmp_path / ".agents/skills", "alpha")
+    (tmp_path / ".agents/skills/notskill").mkdir()
     assert installed_keys(tmp_path, KINDS) == {"skills/alpha"}
 
 
@@ -46,9 +46,13 @@ def test_resolve_key_bare_qualified_unknown_and_ambiguous():
         resolve_key("zzz", keys)
 
 
-def test_given_agents_and_claude_dirs_when_scan_then_union_without_duplicates(tmp_path):
+def test_given_open_layout_when_scan_then_names_come_from_agents_skills(tmp_path):
     write_skill(tmp_path / ".agents/skills", "alpha")
     (tmp_path / ".claude/skills").mkdir(parents=True)
     (tmp_path / ".claude/skills/alpha").symlink_to("../../.agents/skills/alpha")
-    write_skill(tmp_path / ".claude/skills", "legacy")
-    assert installed_keys(tmp_path, KINDS) == {"skills/alpha", "skills/legacy"}
+    assert installed_keys(tmp_path, KINDS) == {"skills/alpha"}
+
+
+def test_given_real_dir_only_in_claude_skills_when_scan_then_not_counted(tmp_path):
+    write_skill(tmp_path / ".claude/skills", "stray")
+    assert installed_keys(tmp_path, KINDS) == set()

@@ -13,7 +13,7 @@ def test_given_no_tui_pick_when_dry_run_then_prints_add(lib, tmp_path, capsys):
 
 
 def test_given_installed_when_no_tui_then_additive_only(lib, tmp_path, capsys):
-    write_skill(tmp_path / ".claude/skills", "beta")
+    write_skill(tmp_path / ".agents/skills", "beta")
     run_cli(lib, tmp_path, "--no-tui", "--pick", "alpha", "--dry-run")
     assert "remove: -" in capsys.readouterr().out
 
@@ -29,13 +29,13 @@ def test_given_profile_when_no_tui_then_installs_its_skills(lib, tmp_path, capsy
 
 
 def test_given_installed_when_list_then_marked(lib, tmp_path, capsys):
-    write_skill(tmp_path / ".claude/skills", "beta")
+    write_skill(tmp_path / ".agents/skills", "beta")
     run_cli(lib, tmp_path, "--list")
     lines = {l[2:].split()[0]: l[0] for l in capsys.readouterr().out.splitlines()}
     assert lines["skills/beta"] == "*" and lines["skills/alpha"] == " "
 
 
 def test_given_everything_installed_when_run_then_nothing_to_do(lib, tmp_path, capsys):
-    write_skill(tmp_path / ".claude/skills", "alpha")
+    write_skill(tmp_path / ".agents/skills", "alpha")
     assert run_cli(lib, tmp_path, "--no-tui", "--pick", "alpha") == 0
     assert "nothing to do" in capsys.readouterr().out
