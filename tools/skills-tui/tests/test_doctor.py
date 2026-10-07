@@ -3,20 +3,25 @@ import os
 from pathlib import Path
 
 from skills_tui.dirhash import tree_hash
-from skills_tui.doctor import (CONFLICT, CORRUPT, DANGLING, DEAD_SOURCE, FOREIGN, LOCK_STALE, MODIFIED, ORPHAN,
-                               OUTDATED, UNTRACKED, diagnose)
+from skills_tui.doctor import (CONFLICT, CORRUPT, DANGLING, DEAD_SOURCE, FOREIGN, LEGACY, LOCK_STALE, MODIFIED, ORPHAN,
+                               OUTDATED, UNLINKED, UNTRACKED, diagnose)
 from tests.conftest import write_skill
 
 
-def installed(project: Path, lib: Path, name: str, *, lock=True):
-    """Simulate `npx skills add`: copy lib skill to project and (optionally) record it in the lock."""
+def installed(project: Path, lib: Path, name: str, *, lock=True, legacy=False):
+    """Simulate `npx skills add -a claude-code codex`: real files in .agents/skills, symlink in .claude/skills.
+    legacy=True: old layout, real copy in .claude/skills only."""
     src = lib / "skills" / name
-    dest = project / ".claude/skills" / name
+    dest = project / (".claude/skills" if legacy else ".agents/skills") / name
     dest.mkdir(parents=True)
     for f in src.rglob("*"):
         if f.is_file():
             (dest / f.relative_to(src)).parent.mkdir(parents=True, exist_ok=True)
             (dest / f.relative_to(src)).write_bytes(f.read_bytes())
+    if not legacy:
+        link = project / ".claude/skills" / name
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(Path("../../.agents/skills") / name)
     if lock:
         write_lock(project, {name: entry(project, lib, name)})
 
@@ -71,7 +76,7 @@ def test_given_project_equals_lib_but_lock_old_when_diagnose_then_lock_stale(lib
 def test_given_dir_deleted_when_diagnose_then_dangling(lib, tmp_path):
     installed(tmp_path, lib, "alpha")
     import shutil
-    shutil.rmtree(tmp_path / ".claude/skills/alpha")
+    shutil.rmtree(tmp_path / ".agents/skills/alpha")  # leaves a dangling .claude symlink
     assert states(tmp_path, lib) == {"alpha": DANGLING}
 
 
@@ -125,3 +130,44 @@ def test_given_bad_lock_when_diagnose_then_single_corrupt_issue(lib, tmp_path):
 
 def test_given_no_lock_and_no_dirs_when_diagnose_then_healthy(lib, tmp_path):
     assert diagnose(tmp_path, lib) == []
+
+
+# ---- layout: real files in .agents/skills, symlink in .claude/skills ----
+
+def test_given_legacy_real_copy_in_claude_only_when_diagnose_then_legacy_recommend_migrate(lib, tmp_path):
+    installed(tmp_path, lib, "alpha", legacy=True)
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == LEGACY and issue.recommended == "update"
+
+
+def test_given_claude_link_missing_when_diagnose_then_unlinked_recommend_relink(lib, tmp_path):
+    installed(tmp_path, lib, "alpha")
+    (tmp_path / ".claude/skills/alpha").unlink()
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == UNLINKED and "missing" in issue.detail and issue.recommended == "update"
+
+
+def test_given_claude_real_dir_instead_of_link_when_diagnose_then_unlinked(lib, tmp_path):
+    installed(tmp_path, lib, "alpha")
+    (tmp_path / ".claude/skills/alpha").unlink()
+    write_skill(tmp_path / ".claude/skills", "alpha")
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == UNLINKED and "not a symlink" in issue.detail
+
+
+def test_given_claude_link_points_elsewhere_when_diagnose_then_unlinked(lib, tmp_path):
+    installed(tmp_path, lib, "alpha")
+    (tmp_path / ".claude/skills/alpha").unlink()
+    (tmp_path / ".claude/skills/alpha").symlink_to(lib / "skills/beta")
+    assert states(tmp_path, lib) == {"alpha": UNLINKED}
+
+
+def test_given_content_changed_in_legacy_layout_when_diagnose_then_content_state_wins(lib, tmp_path):
+    installed(tmp_path, lib, "alpha", legacy=True)
+    (lib / "skills/alpha/SKILL.md").write_text("new")
+    assert states(tmp_path, lib) == {"alpha": OUTDATED}
+
+
+def test_given_untracked_in_agents_dir_when_diagnose_then_reported_once_ignoring_claude_link(lib, tmp_path):
+    installed(tmp_path, lib, "alpha", lock=False)
+    assert [i.name for i in diagnose(tmp_path, lib)] == ["alpha"]

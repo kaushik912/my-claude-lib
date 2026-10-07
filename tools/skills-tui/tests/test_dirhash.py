@@ -41,10 +41,10 @@ def test_hash_matches_real_npx_skills_lock(tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
     skills = ["karpathy-guidelines", "mysql-query", "debug-live"]
-    r = subprocess.run(["npx", "--yes", "skills", "add", str(LIB), "-s", *skills, "-a", "claude-code", "-y"],
+    r = subprocess.run(["npx", "--yes", "skills", "add", str(LIB), "-s", *skills, "-a", "claude-code", "codex", "-y"],
                        cwd=proj, capture_output=True, text=True, timeout=120)
     if r.returncode or not (proj / "skills-lock.json").exists():
         pytest.skip(f"npx skills unavailable: {r.stderr[-200:]}")
     lock = json.loads((proj / "skills-lock.json").read_text())["skills"]
     for n in skills:
-        assert tree_hash(proj / ".claude/skills" / n) == lock[n]["computedHash"], n
+        assert tree_hash(proj / ".agents/skills" / n) == lock[n]["computedHash"], n

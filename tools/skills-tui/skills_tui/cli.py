@@ -24,7 +24,6 @@ def parse_args(argv):
     ap.add_argument("--list", action="store_true", help="print catalog with installed marks and exit")
     ap.add_argument("--doctor", action="store_true", help="check the project's skills-lock.json vs project copies and the lib; offer update/delete/keep")
     ap.add_argument("--vendor", action="store_true", help="refresh vendored skills in the lib from vendors.txt (npx skills lines); --yes applies new skills only")
-    ap.add_argument("--agent", default="claude-code")
     ap.add_argument("--global", dest="global_", action="store_true", help="user-level instead of project")
     ap.add_argument("--yes", action="store_true", help="skip confirmation")
     ap.add_argument("--dry-run", action="store_true")
@@ -49,7 +48,7 @@ def main(argv=None) -> int:
         if not (a.yes or sys.stdin.isatty()):
             print("error: --doctor needs a terminal; pass --yes to apply only the recommended fixes", file=sys.stderr)
             return 2
-        return run_doctor(project, a.lib, Ctx(project, a.lib, a.agent), yes=a.yes, dry_run=a.dry_run)
+        return run_doctor(project, a.lib, Ctx(project, a.lib), yes=a.yes, dry_run=a.dry_run)
     catalog = load_catalog(a.lib, KINDS)
     names = {i.key for i in catalog}
     have = installed_keys(project, KINDS)
@@ -90,7 +89,7 @@ def main(argv=None) -> int:
     if not (a.yes or a.dry_run or a.no_tui):
         if input("Apply? [y/N] ").strip().lower() != "y":
             return 1
-    ctx = Ctx(project, a.lib, a.agent, a.global_)
+    ctx = Ctx(project, a.lib, global_=a.global_)
     try:
         actions = build_actions(plan, KINDS, ctx)
     except ValueError as e:

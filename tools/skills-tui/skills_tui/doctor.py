@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .dirhash import diff_files, tree_hash
-from .kinds.skills import SKILLS_DIR
+from .kinds.skills import CANON_DIR, CLAUDE_DIR
 
 LOCK = "skills-lock.json"
 SUPPORTED_VERSION = 1
@@ -16,6 +16,7 @@ SUPPORTED_VERSION = 1
 OUTDATED, MODIFIED, CONFLICT, LOCK_STALE = "outdated", "modified", "conflict", "lock-stale"
 DANGLING, ORPHAN, DEAD_SOURCE, UNTRACKED = "dangling", "orphan", "dead-source", "untracked"
 FOREIGN, CORRUPT = "foreign", "corrupt"
+LEGACY, UNLINKED = "legacy-layout", "not-linked"
 
 UPDATE, DELETE, KEEP = "update", "delete", "keep"
 
@@ -52,6 +53,24 @@ def _diff_detail(proj: Path, src: Path) -> str:
     return "; ".join(parts) or "same files"
 
 
+def _project_dir(project: Path, name: str) -> Path | None:
+    for base in (CANON_DIR, CLAUDE_DIR):
+        if (project / base / name).is_dir():
+            return project / base / name
+    return None
+
+
+def _layout_issue(name: str, project: Path) -> Issue | None:
+    """Content is healthy; check the layout: real files in .agents/skills, symlink in .claude/skills."""
+    canon, link = project / CANON_DIR / name, project / CLAUDE_DIR / name
+    if not canon.is_dir():
+        return Issue(name, LEGACY, "real copy only in .claude/skills (not .agents/skills)", (UPDATE, KEEP), UPDATE)
+    if not (link.is_symlink() and link.resolve() == canon.resolve()):
+        why = "missing" if not link.is_symlink() and not link.exists() else "not a symlink to .agents/skills"
+        return Issue(name, UNLINKED, f".claude/skills/{name} {why}", (UPDATE, KEEP), UPDATE)
+    return None
+
+
 def _check_entry(name: str, ent: dict, project: Path, lib: Path) -> Issue | None:
     src_rel = ent.get("source")
     if ent.get("sourceType") != "local" or not isinstance(src_rel, str):
@@ -65,12 +84,12 @@ def _check_entry(name: str, ent: dict, project: Path, lib: Path) -> Issue | None
         return Issue(name, FOREIGN, "local source is a different lib, not checked")
     if not in_lib:
         return Issue(name, ORPHAN, "no longer in lib", (DELETE, KEEP), DELETE)
-    src, proj = lib / "skills" / name, project / SKILLS_DIR / name
-    if not proj.is_dir():
+    src, proj = lib / "skills" / name, _project_dir(project, name)
+    if proj is None:
         return Issue(name, DANGLING, "in lock, missing from project", (UPDATE, DELETE, KEEP))
     h_lock, h_src, h_proj = ent.get("computedHash"), tree_hash(src), tree_hash(proj)
     if h_proj == h_src == h_lock:
-        return None
+        return _layout_issue(name, project)
     if h_proj == h_src:
         return Issue(name, LOCK_STALE, "project matches lib; lock hash is old", (UPDATE, KEEP), UPDATE)
     if h_proj == h_lock:
@@ -86,9 +105,11 @@ def diagnose(project: Path, lib: Path) -> list[Issue]:
     except LockError as e:
         return [Issue(LOCK, CORRUPT, str(e))]
     issues = [i for name, ent in sorted(lock.items()) if (i := _check_entry(name, ent, project, lib))]
-    root = project / SKILLS_DIR
-    if root.is_dir():
-        for d in sorted(root.iterdir()):
-            if d.is_dir() and not d.is_symlink() and d.name not in lock and (lib / "skills" / d.name / "SKILL.md").is_file():
+    seen: set[str] = set()
+    for base in (CANON_DIR, CLAUDE_DIR):
+        root = project / base
+        for d in sorted(root.iterdir()) if root.is_dir() else []:
+            if d.is_dir() and not d.is_symlink() and d.name not in lock and d.name not in seen and (lib / "skills" / d.name / "SKILL.md").is_file():
+                seen.add(d.name)
                 issues.append(Issue(d.name, UNTRACKED, "in project, not in lock", (UPDATE, DELETE, KEEP)))
     return issues

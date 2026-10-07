@@ -19,11 +19,15 @@ class Item:
         return f"{self.kind}/{self.name}"
 
 
+# Open-source skills layout: real files in .agents/skills, symlinks in .claude/skills (npx skills does the linking).
+DEFAULT_AGENTS = ("claude-code", "codex")
+
+
 @dataclass(frozen=True)
 class Ctx:
     project: Path
     lib: Path
-    agent: str = "claude-code"
+    agents: tuple[str, ...] = DEFAULT_AGENTS
     global_: bool = False
     exec_: Callable = subprocess.run  # injectable for tests
 

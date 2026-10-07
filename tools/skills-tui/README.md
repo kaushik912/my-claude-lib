@@ -1,6 +1,6 @@
 # skills-tui
 
-TUI to pick skills from this lib's curated catalog (`skills/` + vendored ones in `skills-lock.json`) and install them with `npx skills add <lib path>`. Project scope, Claude agent by default.
+TUI to pick skills from this lib's curated catalog (`skills/` + vendored ones in `skills-lock.json`) and install them with `npx skills add <lib path>`. Project scope. Skills use the open-source layout: real files in `.agents/skills/<name>`, symlinks in `.claude/skills/<name>` (always `-a claude-code codex`; no other agents).
 
 ```
 tools/skills-tui/install.sh      # venv + ~/.local/bin/skills-tui link
@@ -16,12 +16,12 @@ skills-tui --pick spec bruno --no-tui --yes
 - Installed skills (`.claude/skills/*`) start ticked; unticking one removes it. Skills not in the catalog are never touched.
 - Profiles: `profiles.json`, keyed by kind: `{"skills": [...], "rules": [...], "extends": [...]}`. Picking one pre-ticks its items.
 - Add a kind (rules, commands, agents): for another `.claude/<dir>/*.md` kind add a `CopyKind(name, dir)` line to `KINDS`; otherwise write `skills_tui/kinds/<x>.py` implementing `Kind` (`catalog`, `installed`, `add`, `remove` -> `Action`s; copy or shell out), add it to `KINDS` in `kinds/__init__.py`. Core is untouched; see `tests/test_extension.py`. Items are `kind/name` keys; bare names work in `--pick` when unambiguous.
-- Flags: `--agent`, `--global`, `--dry-run`, `--yes`.
+- Flags: `--global` (skills only), `--dry-run`, `--yes`.
 - Modules: `kinds/` (extension seam; `skills` via npx; `rules`, `commands`, `agents` = `CopyKind`s copying `.claude/<dir>/*.md` as real files (project-only)), `catalog`, `profiles`, `plan` (pure) · `runner` · `tui`, `cli`.
 - Tests: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest`.
 
 ## Doctor (`--doctor`, skills only)
-Compares each `skills-lock.json` entry's project copy, lib source and `computedHash` (SHA-256 over sorted relpath+content; see `dirhash.py`). States: `outdated` (lib changed, rec. update), `modified` (project edited), `conflict`, `lock-stale`, `dangling` (dir missing), `orphan` (gone from lib, rec. delete), `dead-source` (lock path unresolvable), `untracked` (dir w/o lock entry), `foreign` (other source, report-only), `corrupt` (bad/unknown lock, report-only). Per issue: update / delete / keep. All fixes go through `npx skills add|remove`; the lock is never hand-edited. Copy kinds (rules/commands/agents) have no lock, so no doctor yet.
+Compares each `skills-lock.json` entry's project copy, lib source and `computedHash` (SHA-256 over sorted relpath+content; see `dirhash.py`). States: `legacy-layout` (real copy only in `.claude/skills`; update migrates it), `not-linked` (`.claude/skills/<n>` missing or not a symlink to `.agents/skills/<n>`; update re-links), `outdated` (lib changed, rec. update), `modified` (project edited), `conflict`, `lock-stale`, `dangling` (dir missing), `orphan` (gone from lib, rec. delete), `dead-source` (lock path unresolvable), `untracked` (dir w/o lock entry), `foreign` (other source, report-only), `corrupt` (bad/unknown lock, report-only). Per issue: update / delete / keep. All fixes go through `npx skills add|remove`; the lock is never hand-edited. Copy kinds (rules/commands/agents) have no lock, so no doctor yet.
 
 ## Vendor (`--vendor`, lib-side)
 `vendors.txt` (lib root): one `npx skills add <source> --skill <names>` per line, `#` comments, trailing `# bundle=<name>` picks the marketplace bundle. Each line runs in a temp sandbox project (so `-g/-a/-y` are ignored and `~/.claude` is never touched); results are compared with `skills/`:

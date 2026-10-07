@@ -44,3 +44,11 @@ def test_resolve_key_bare_qualified_unknown_and_ambiguous():
         resolve_key("a", keys)
     with pytest.raises(ResolveError, match="unknown"):
         resolve_key("zzz", keys)
+
+
+def test_given_agents_and_claude_dirs_when_scan_then_union_without_duplicates(tmp_path):
+    write_skill(tmp_path / ".agents/skills", "alpha")
+    (tmp_path / ".claude/skills").mkdir(parents=True)
+    (tmp_path / ".claude/skills/alpha").symlink_to("../../.agents/skills/alpha")
+    write_skill(tmp_path / ".claude/skills", "legacy")
+    assert installed_keys(tmp_path, KINDS) == {"skills/alpha", "skills/legacy"}

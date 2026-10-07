@@ -30,7 +30,7 @@ def test_given_extra_kind_when_profile_mixes_kinds_then_each_kind_acts(lib, tmp_
     (lib / "p.json").write_text('{"mix": {"skills": ["beta"], "widgets": ["style"]}}')
     calls = []
     fake_exec = lambda cmd, cwd: calls.append(cmd) or SimpleNamespace(returncode=0)  # noqa: E731
-    monkeypatch.setattr(cli, "Ctx", lambda *a: Ctx(*a, exec_=fake_exec))
+    monkeypatch.setattr(cli, "Ctx", lambda *a, **kw: Ctx(*a, **kw, exec_=fake_exec))
 
     rc = cli.main([str(tmp_path), "--lib", str(lib), "--profiles-file", str(lib / "p.json"), "--profile", "mix", "--no-tui"])
 

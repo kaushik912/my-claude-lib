@@ -24,7 +24,8 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
 - **T1 Catalog:** `cd $R/proj && skills-tui --list`
   - ~39 rows: `skills/...` marked `mine`/`vendored`, plus `rules/`, `commands/`, `agents/`. No `*` yet.
 - **T2 Profile, no TUI:** `skills-tui --profile core --no-tui`
-  - `add: skills/cavewhat, skills/karpathy-guidelines`; both dirs under `.claude/skills/`.
+  - `add: skills/cavewhat, skills/karpathy-guidelines`; the command ends `-a claude-code codex`.
+  - **Layout check:** real dirs in `.agents/skills/<name>`; `ls -l .claude/skills` shows `<name> -> ../../.agents/skills/<name>` symlinks.
   - `skills-tui --list | grep '^\*'` shows them.
 - **T3 TUI flow:** run `skills-tui`
   1. Enter skips profiles.
@@ -33,11 +34,11 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
   4. Down to `✔ Apply`, Enter, `y`.
   - Expect `.claude/rules/security.md`.
 - **T4 Untick removes:** `skills-tui` -> `skills` -> untick `cavewhat` -> Enter -> Apply -> `y`.
-  - `remove: skills/cavewhat`; dir gone.
+  - `remove: skills/cavewhat`; gone from both `.agents/skills` and `.claude/skills`.
 - **T5 Cancel is safe:** `skills-tui` -> `✖ Cancel` (or Ctrl-C at the menu). Nothing changes.
 - **T6 Mixed kinds are real files:**
   `skills-tui --pick rules/spring agents/debugger commands/skills-used --no-tui && ls -l .claude/rules .claude/agents .claude/commands`
-  - No `->` symlink arrows.
+  - No `->` symlink arrows (rules/commands/agents are plain copies; only skills use the `.agents` + symlink layout).
 - **T7 Idempotent:** re-run T2 -> `nothing to do`.
 - **T8 Dry run:** `skills-tui --pick spec --no-tui --dry-run` -> prints the `npx ...` command, installs nothing.
 - **T9 Guards:**
@@ -49,12 +50,14 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
 - **D1 Healthy:** `cd $R/proj && skills-tui --doctor --yes` -> `healthy: nothing to fix`.
 - **D2 Break project, report:**
   ```bash
-  echo x >> .claude/skills/karpathy-guidelines/SKILL.md          # modified
-  rm -rf .claude/skills/cavewhat                                 # dangling (if still installed)
-  cp -r $L/skills/spec .claude/skills/spec                       # untracked
+  echo x >> .claude/skills/karpathy-guidelines/SKILL.md          # modified (edits the real file via the link)
+  rm -rf .agents/skills/cavewhat                                 # dangling (real dir gone, link left)
+  cp -r $L/skills/spec .agents/skills/spec                       # untracked (no lock entry)
+  skills-tui --pick skills/bruno --no-tui && rm .claude/skills/bruno   # not-linked (symlink missing)
   skills-tui --doctor --yes --dry-run
   ```
-  - Expect `modified`, `dangling`, `untracked`, then `nothing to apply` (none has a recommended fix).
+  - Expect `not-linked bruno`, `dangling cavewhat`, `modified karpathy-guidelines`, `untracked spec`.
+  - Only `not-linked` has a recommended fix (`update: bruno`); the others need an interactive choice.
 - **D3 Interactive fix:** `skills-tui --doctor` (real terminal).
   - Per issue choose `restore from lib` / `keep as is` / `adopt`; confirm `y`.
   - Re-run D1: only what you kept remains.
@@ -67,7 +70,17 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
   ```
   - Expect `orphan debug-mode`, `outdated mysql-query`; plan `update: mysql-query`, `delete: debug-mode`.
 - **D5 Apply recommended:** D4 without `--dry-run`; a second `--doctor --yes` says `healthy`.
-- **D6 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
+  - Same on D2: `--doctor --yes` re-creates the `.claude/skills/bruno` symlink.
+- **D6 Migrate an old-style install:**
+  ```bash
+  mkdir $R/legacy && cd $R/legacy
+  npx skills add $L -s spec -a claude-code -y        # old layout: real copy in .claude/skills only
+  skills-tui --doctor --yes --dry-run                # legacy-layout spec: real copy only in .claude/skills
+  skills-tui --doctor --yes                          # migrates
+  ls -l .claude/skills                               # spec -> ../../.agents/skills/spec
+  skills-tui --doctor --yes                          # healthy
+  ```
+- **D7 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
 
 ## V. Vendor (always against `lib-copy`)
 
@@ -94,6 +107,11 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
 
 - `tools/skills-tui/uninstall.sh` -> link and venv removed; `command -v skills-tui` is empty.
 - Run it twice (safe), then `install.sh` again.
+
+## Notes
+
+- Skills always install with `-a claude-code codex`: **real files in `.agents/skills`, symlinks in `.claude/skills`** (open-source layout). There is no `--agent` flag.
+- Bare names that exist in two kinds (e.g. `karpathy-guidelines` is both a skill and a rule) are ambiguous: use `skills/karpathy-guidelines`.
 
 ## Muscle-memory cheat sheet
 
