@@ -55,7 +55,7 @@ def test_given_project_edited_when_diagnose_then_modified_no_recommendation(lib,
     installed(tmp_path, lib, "alpha")
     (tmp_path / ".claude/skills/alpha/SKILL.md").write_text("mine")
     (issue,) = diagnose(tmp_path, lib)
-    assert issue.state == MODIFIED and issue.recommended is None and issue.options == ("update", "keep")
+    assert issue.state == MODIFIED and issue.recommended is None and issue.options == ("update", "push", "keep")
 
 
 def test_given_both_changed_when_diagnose_then_conflict(lib, tmp_path):
@@ -157,3 +157,20 @@ def test_given_claude_link_points_elsewhere_when_diagnose_then_unlinked(lib, tmp
 def test_given_untracked_skill_when_diagnose_then_reported_once_ignoring_claude_link(lib, tmp_path):
     installed(tmp_path, lib, "alpha", lock=False)
     assert [i.name for i in diagnose(tmp_path, lib)] == ["alpha"]
+
+
+# ---- push-back option: own skills only, modified only ----
+
+def test_given_vendored_skill_modified_when_diagnose_then_no_push_and_hint(lib, tmp_path):
+    installed(tmp_path, lib, "gamma")  # gamma is in the lib's lock => vendored
+    (tmp_path / ".agents/skills/gamma/SKILL.md").write_text("mine")
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == MODIFIED and "push" not in issue.options and "upstream owns it" in issue.detail
+
+
+def test_given_conflict_when_diagnose_then_no_push(lib, tmp_path):
+    installed(tmp_path, lib, "alpha")
+    (lib / "skills/alpha/SKILL.md").write_text("lib")
+    (tmp_path / ".agents/skills/alpha/SKILL.md").write_text("proj")
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == CONFLICT and "push" not in issue.options and "merge by hand" in issue.detail

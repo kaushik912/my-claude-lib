@@ -1,7 +1,7 @@
 """Questionary screens: profiles -> kind menu -> per-kind checkbox (type to filter). Logic lives in selection.py."""
 import questionary
 
-from .doctor import DELETE, KEEP, UPDATE, Issue
+from .doctor import DELETE, KEEP, PUSH, UPDATE, Issue
 from .kinds import Item
 from .selection import kind_counts, merge, order
 
@@ -59,7 +59,7 @@ UPDATE_LABELS = {
 def _label(issue: Issue, option: str) -> str:
     if option == UPDATE:
         return UPDATE_LABELS.get(issue.state, "update")
-    return {DELETE: "delete (npx skills remove)", KEEP: "keep as is"}[option]
+    return {DELETE: "delete (npx skills remove)", KEEP: "keep as is", PUSH: "push to lib (your skill)"}[option]
 
 
 def doctor_choose(issues: list[Issue]) -> dict[str, str] | None:

@@ -68,3 +68,60 @@ def test_cli_doctor_flag_dry_run_and_global_rejected(lib, tmp_path, capsys):
 def test_cli_doctor_without_terminal_or_yes_fails_fast(lib, tmp_path):
     make(lib, tmp_path)  # pytest stdin is not a tty
     assert cli.main([str(tmp_path), "--lib", str(lib), "--doctor"]) == 2
+
+
+# ---- push to lib ----
+
+def push_env(lib, tmp_path):
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", str(lib)], check=True)
+    installed(tmp_path, lib, "alpha")
+    (tmp_path / ".agents/skills/alpha/SKILL.md").write_text("better prompt")
+    calls = []
+    ctx = Ctx(tmp_path, lib, exec_=lambda cmd, cwd: calls.append(cmd) or SimpleNamespace(returncode=0))
+    return ctx, calls
+
+
+def test_given_push_decision_when_confirmed_then_lib_updated_and_no_npx(lib, tmp_path, capsys):
+    ctx, calls = push_env(lib, tmp_path)
+    rc = run_doctor(tmp_path, lib, ctx, choose=lambda i: {"alpha": "push"}, confirm=lambda: True)
+    assert rc == 0 and not calls
+    assert (lib / "skills/alpha/SKILL.md").read_text() == "better prompt"
+    assert "nothing committed" in capsys.readouterr().out
+
+
+def test_given_push_then_second_doctor_when_run_then_lock_stale_update_refreshes(lib, tmp_path):
+    from skills_tui.doctor import LOCK_STALE, diagnose
+
+    ctx, calls = push_env(lib, tmp_path)
+    run_doctor(tmp_path, lib, ctx, choose=lambda i: {"alpha": "push"}, confirm=lambda: True)
+    (issue,) = diagnose(tmp_path, lib)
+    assert issue.state == LOCK_STALE and issue.recommended == "update"
+    assert run_doctor(tmp_path, lib, ctx, yes=True) == 0
+    assert calls and calls[0][3:7] == ["add", str(lib), "-s", "alpha"]
+
+
+def test_given_push_when_declined_or_dry_run_then_lib_untouched(lib, tmp_path):
+    ctx, calls = push_env(lib, tmp_path)
+    before = (lib / "skills/alpha/SKILL.md").read_text()
+    assert run_doctor(tmp_path, lib, ctx, choose=lambda i: {"alpha": "push"}, confirm=lambda: False) == 1
+    assert run_doctor(tmp_path, lib, ctx, choose=lambda i: {"alpha": "push"}, dry_run=True) == 0
+    assert (lib / "skills/alpha/SKILL.md").read_text() == before
+
+
+def test_given_yes_when_doctor_then_push_is_never_applied(lib, tmp_path):
+    ctx, calls = push_env(lib, tmp_path)
+    before = (lib / "skills/alpha/SKILL.md").read_text()
+    run_doctor(tmp_path, lib, ctx, yes=True)
+    assert (lib / "skills/alpha/SKILL.md").read_text() == before
+
+
+def test_given_push_error_when_doctor_then_rc_1_and_other_decisions_still_run(lib, tmp_path):
+    ctx, calls = push_env(lib, tmp_path)
+    shutil.rmtree(lib / ".git")  # lib no longer a git repo -> push refuses
+    installed(tmp_path, lib, "beta")
+    (lib / "skills/beta/SKILL.md").write_text("new")  # beta outdated
+    rc = run_doctor(tmp_path, lib, ctx, choose=lambda i: {"alpha": "push", "beta": "update"}, confirm=lambda: True)
+    assert rc == 1 and any("beta" in c for c in calls)
+    assert (lib / "skills/alpha/SKILL.md").read_text() != "better prompt"

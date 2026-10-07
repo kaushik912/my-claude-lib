@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .dirhash import diff_files, tree_hash
+from .vendor import read_lib_lock
 from .kinds.skills import CANON_DIR, CLAUDE_DIR
 
 LOCK = "skills-lock.json"
@@ -18,7 +19,7 @@ DANGLING, ORPHAN, DEAD_SOURCE, UNTRACKED = "dangling", "orphan", "dead-source", 
 FOREIGN, CORRUPT = "foreign", "corrupt"
 UNLINKED = "not-linked"
 
-UPDATE, DELETE, KEEP = "update", "delete", "keep"
+UPDATE, DELETE, KEEP, PUSH = "update", "delete", "keep", "push"
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,7 @@ def _layout_issue(name: str, project: Path) -> Issue | None:
     return None
 
 
-def _check_entry(name: str, ent: dict, project: Path, lib: Path) -> Issue | None:
+def _check_entry(name: str, ent: dict, project: Path, lib: Path, vendored: set[str]) -> Issue | None:
     src_rel = ent.get("source")
     if ent.get("sourceType") != "local" or not isinstance(src_rel, str):
         return Issue(name, FOREIGN, f"{ent.get('sourceType', '?')} source, not checked")
@@ -86,8 +87,11 @@ def _check_entry(name: str, ent: dict, project: Path, lib: Path) -> Issue | None
     if h_proj == h_lock:
         return Issue(name, OUTDATED, f"lib changed since install ({_diff_detail(proj, src)})", (UPDATE, KEEP), UPDATE)
     if h_src == h_lock:
-        return Issue(name, MODIFIED, f"project edited locally ({_diff_detail(proj, src)})", (UPDATE, KEEP))
-    return Issue(name, CONFLICT, f"both changed ({_diff_detail(proj, src)})", (UPDATE, KEEP))
+        detail = f"project edited locally ({_diff_detail(proj, src)})"
+        if name in vendored:
+            return Issue(name, MODIFIED, f"{detail}; vendored: upstream owns it, copy it to a new skill name to keep changes", (UPDATE, KEEP))
+        return Issue(name, MODIFIED, detail, (UPDATE, PUSH, KEEP))
+    return Issue(name, CONFLICT, f"both changed ({_diff_detail(proj, src)}); merge by hand", (UPDATE, KEEP))
 
 
 def diagnose(project: Path, lib: Path) -> list[Issue]:
@@ -95,7 +99,8 @@ def diagnose(project: Path, lib: Path) -> list[Issue]:
         lock = read_lock(project)
     except LockError as e:
         return [Issue(LOCK, CORRUPT, str(e))]
-    issues = [i for name, ent in sorted(lock.items()) if (i := _check_entry(name, ent, project, lib))]
+    vendored = set(read_lib_lock(lib))
+    issues = [i for name, ent in sorted(lock.items()) if (i := _check_entry(name, ent, project, lib, vendored))]
     root = project / CANON_DIR
     for d in sorted(root.iterdir()) if root.is_dir() else []:
         if d.is_dir() and not d.is_symlink() and d.name not in lock and (lib / "skills" / d.name / "SKILL.md").is_file():

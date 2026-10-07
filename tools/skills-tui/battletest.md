@@ -13,7 +13,7 @@ tools/skills-tui/.venv/bin/python -m pytest -q tools/skills-tui   # expect: all 
 
 export R=/tmp/somerandomfolder; mkdir -p $R/proj $R/proj2
 L=~/github_projs/my-claude-lib
-mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.claude-plugin $L/.claude $R/lib-copy/
+mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.gitignore $L/.claude-plugin $L/.claude $R/lib-copy/
 (cd $R/lib-copy && git init -q && git add -A && git commit -qm base)   # so `git diff` works
 ```
 
@@ -71,7 +71,19 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
   - Expect `orphan debug-mode`, `outdated mysql-query`; plan `update: mysql-query`, `delete: debug-mode`.
 - **D5 Apply recommended:** D4 without `--dry-run`; a second `--doctor --yes` says `healthy`.
   - Same on D2: `--doctor --yes` re-creates the `.claude/skills/bruno` symlink.
-- **D6 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
+- **D6 Push a better prompt back to the lib:**
+  ```bash
+  cd $R/proj2 && skills-tui --lib $R/lib-copy --pick spec --no-tui
+  echo "- better step" >> .agents/skills/spec/SKILL.md
+  skills-tui --lib $R/lib-copy --doctor        # spec [modified] -> choose "push to lib (your skill)" -> y
+  (cd $R/lib-copy && git status --short && git diff --stat)   # skills/spec/SKILL.md changed; nothing committed
+  skills-tui --lib $R/lib-copy --doctor --yes  # lock-stale -> update refreshes the lock
+  skills-tui --lib $R/lib-copy --doctor --yes  # healthy
+  ```
+  - Guards: a **vendored** skill (e.g. `--pick caveman`, edit it) shows no push option, with a hint; a `conflict` has no push either.
+  - Credentials: add `db.cnf` to a pushed skill dir -> listed as `skipped ... ignored by the lib's .gitignore`, never copied into the lib.
+  - `--doctor --yes` never pushes.
+- **D7 No terminal:** `skills-tui --doctor </dev/null` -> `error: --doctor needs a terminal...`, exit 2.
 
 ## V. Vendor (always against `lib-copy`)
 
@@ -102,6 +114,7 @@ mkdir $R/lib-copy && cp -r $L/skills $L/skills-lock.json $L/vendors.txt $L/.clau
 ## Notes
 
 - Skills always install with `-a claude-code codex`: **real files in `.agents/skills`, symlinks in `.claude/skills`** (open-source layout). There is no `--agent` flag.
+- Re-adding a skill (doctor `update`) replaces its dir: project-only files such as `db.cnf` are wiped. Also, such a file makes the skill look `modified`/`conflict` forever (known limitation).
 - Bare names that exist in two kinds (e.g. `karpathy-guidelines` is both a skill and a rule) are ambiguous: use `skills/karpathy-guidelines`.
 
 ## Muscle-memory cheat sheet
