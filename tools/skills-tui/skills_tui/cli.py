@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from . import tui
+from .doctor_flow import run_doctor
 from .catalog import ResolveError, installed_keys, load_catalog, resolve_key
 from .kinds import KINDS, Ctx
 from .plan import make_plan
@@ -20,6 +21,7 @@ def parse_args(argv):
     ap.add_argument("--pick", nargs="+", default=[], metavar="NAME", help="pre-tick these items (name or kind/name)")
     ap.add_argument("--no-tui", action="store_true", help="additive install of --profile/--pick, no prompt")
     ap.add_argument("--list", action="store_true", help="print catalog with installed marks and exit")
+    ap.add_argument("--doctor", action="store_true", help="check the project's skills-lock.json vs project copies and the lib; offer update/delete/keep")
     ap.add_argument("--agent", default="claude-code")
     ap.add_argument("--global", dest="global_", action="store_true", help="user-level instead of project")
     ap.add_argument("--yes", action="store_true", help="skip confirmation")
@@ -32,6 +34,14 @@ def parse_args(argv):
 def main(argv=None) -> int:
     a = parse_args(argv)
     project = Path(a.project).resolve()
+    if a.doctor:
+        if a.global_:
+            print("error: --doctor is project-only", file=sys.stderr)
+            return 2
+        if not (a.yes or sys.stdin.isatty()):
+            print("error: --doctor needs a terminal; pass --yes to apply only the recommended fixes", file=sys.stderr)
+            return 2
+        return run_doctor(project, a.lib, Ctx(project, a.lib, a.agent), yes=a.yes, dry_run=a.dry_run)
     catalog = load_catalog(a.lib, KINDS)
     names = {i.key for i in catalog}
     have = installed_keys(project, KINDS)

@@ -1,6 +1,7 @@
 """Questionary screens: profiles -> kind menu -> per-kind checkbox (type to filter). Logic lives in selection.py."""
 import questionary
 
+from .doctor import DELETE, KEEP, UPDATE, Issue
 from .kinds import Item
 from .selection import kind_counts, merge, order
 
@@ -46,3 +47,44 @@ def pick_items(catalog: list[Item], installed: set[str], preticked: set[str]) ->
         picked = _kind_screen(choice, items, installed, selected)
         if picked is not None:
             selected = merge(selected, {i.key for i in items}, picked)
+
+
+UPDATE_LABELS = {
+    "outdated": "update from lib", "modified": "revert to lib", "conflict": "overwrite with lib",
+    "lock-stale": "refresh lock", "dangling": "restore from lib", "untracked": "adopt (reinstall from lib)",
+    "dead-source": "re-link to this lib",
+}
+
+
+def _label(issue: Issue, option: str) -> str:
+    if option == UPDATE:
+        return UPDATE_LABELS.get(issue.state, "update")
+    return {DELETE: "delete (npx skills remove)", KEEP: "keep as is"}[option]
+
+
+def doctor_choose(issues: list[Issue]) -> dict[str, str] | None:
+    """Returns name -> update|delete|keep, or None if cancelled."""
+    decisions: dict[str, str] = {}
+    recommended = [i for i in issues if i.recommended]
+    if recommended:
+        mode = questionary.select(
+            f"{len(recommended)} issue(s) have a clear fix",
+            choices=[
+                questionary.Choice("Apply recommended, review the rest", "rec"),
+                questionary.Choice("Review each one", "each"),
+                questionary.Choice("Cancel", "cancel"),
+            ],
+        ).ask()
+        if mode in (None, "cancel"):
+            return None
+        if mode == "rec":
+            decisions = {i.name: i.recommended for i in recommended}
+    for i in issues:
+        if i.name in decisions:
+            continue
+        choices = [questionary.Choice(_label(i, o), o) for o in i.options]
+        ans = questionary.select(f"{i.name} [{i.state}] {i.detail}", choices=choices, default=KEEP).ask()
+        if ans is None:
+            return None
+        decisions[i.name] = ans
+    return decisions
