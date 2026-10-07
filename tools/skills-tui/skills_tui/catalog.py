@@ -1,35 +1,26 @@
-"""Catalog = every `skills/<name>/SKILL.md` in the lib; vendored ones are listed in its skills-lock.json."""
-import json
-from dataclasses import dataclass
+"""Aggregates every kind's catalog / installed state into `kind/name` keys."""
 from pathlib import Path
 
-import yaml
+from .kinds import Item, Kind
 
 
-@dataclass(frozen=True)
-class Skill:
-    name: str
-    description: str
-    origin: str  # "mine" | "vendored"
+class ResolveError(ValueError):
+    pass
 
 
-def _frontmatter(text: str) -> dict:
-    if not text.startswith("---"):
-        return {}
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}
-    data = yaml.safe_load(parts[1])
-    return data if isinstance(data, dict) else {}
+def load_catalog(lib: Path, kinds: list[Kind]) -> list[Item]:
+    return [item for k in kinds for item in k.catalog(lib)]
 
 
-def load_catalog(lib: Path) -> list[Skill]:
-    lock = lib / "skills-lock.json"
-    vendored = set(json.loads(lock.read_text()).get("skills", {})) if lock.is_file() else set()
-    skills = []
-    for md in sorted((lib / "skills").glob("*/SKILL.md")):
-        meta = _frontmatter(md.read_text())
-        name = md.parent.name
-        desc = " ".join(str(meta.get("description", "")).split())
-        skills.append(Skill(name, desc, "vendored" if name in vendored else "mine"))
-    return skills
+def installed_keys(project: Path, kinds: list[Kind]) -> set[str]:
+    return {f"{k.name}/{n}" for k in kinds for n in k.installed(project)}
+
+
+def resolve_key(token: str, keys: set[str]) -> str:
+    """Accept `kind/name` or a bare name that is unique across kinds."""
+    if token in keys:
+        return token
+    matches = sorted(k for k in keys if k.split("/", 1)[1] == token)
+    if len(matches) == 1:
+        return matches[0]
+    raise ResolveError(f"ambiguous: {token} ({', '.join(matches)})" if matches else f"unknown item: {token}")

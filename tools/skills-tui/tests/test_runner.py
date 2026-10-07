@@ -1,35 +1,42 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from skills_tui.kinds import Action, Ctx
+from skills_tui.kinds.skills import SkillsKind
 from skills_tui.plan import Plan
-from skills_tui.runner import build_commands, run
+from skills_tui.runner import build_actions, run
 
-LIB = Path("/lib")
+CTX = Ctx(Path("/proj"), Path("/lib"))
 
 
-def test_given_plan_when_build_then_add_and_remove_argv():
-    cmds = build_commands(Plan(("a", "b"), ("c",)), LIB)
-    assert cmds[0] == ["npx", "--yes", "skills", "add", "/lib", "-s", "a", "b", "-a", "claude-code", "-y"]
-    assert cmds[1] == ["npx", "--yes", "skills", "remove", "c", "-a", "claude-code", "-y"]
+def test_given_plan_when_build_then_add_and_remove_labels():
+    a = build_actions(Plan(("skills/a", "skills/b"), ("skills/c",)), [SkillsKind()], CTX)
+    assert a[0].label == "npx --yes skills add /lib -s a b -a claude-code -y"
+    assert a[1].label == "npx --yes skills remove c -a claude-code -y"
 
 
 def test_given_global_and_agent_when_build_then_flags():
-    (cmd,) = build_commands(Plan(("a",), ()), LIB, agent="codex", global_=True)
-    assert cmd[-4:] == ["-a", "codex", "-y", "-g"]
+    ctx = Ctx(Path("/proj"), Path("/lib"), agent="codex", global_=True)
+    (a,) = build_actions(Plan(("skills/a",), ()), [SkillsKind()], ctx)
+    assert a.label.endswith("-a codex -y -g")
 
 
-def test_given_dry_run_when_run_then_nothing_executed(tmp_path):
+def test_given_action_when_run_then_executes_in_project_dir():
     calls = []
-    assert run([["x"]], tmp_path, dry_run=True, exec_=lambda *a, **k: calls.append(a)) == 0
-    assert not calls
+    ctx = Ctx(Path("/proj"), Path("/lib"), exec_=lambda cmd, cwd: calls.append((cmd[3], cwd)) or SimpleNamespace(returncode=0))
+    (a,) = build_actions(Plan(("skills/a",), ()), [SkillsKind()], ctx)
+    assert run([a]) == 0
+    assert calls == [("add", Path("/proj"))]
 
 
-def test_given_failure_when_run_then_stops_and_returns_rc(tmp_path):
-    calls = []
+def test_given_dry_run_when_run_then_nothing_executed():
+    hit = []
+    assert run([Action("x", lambda: hit.append(1) or 0)], dry_run=True) == 0
+    assert not hit
 
-    def fake(cmd, cwd):
-        calls.append(cmd)
-        return SimpleNamespace(returncode=3)
 
-    assert run([["a"], ["b"]], tmp_path, exec_=fake) == 3
-    assert calls == [["a"]]
+def test_given_failure_when_run_then_stops_and_returns_rc():
+    hit = []
+    acts = [Action("a", lambda: hit.append("a") or 3), Action("b", lambda: hit.append("b") or 0)]
+    assert run(acts) == 3
+    assert hit == ["a"]

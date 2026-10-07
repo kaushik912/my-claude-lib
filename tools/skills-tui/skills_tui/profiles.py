@@ -1,9 +1,11 @@
-"""Profiles: named skill sets. `extends` pulls in other profiles."""
+"""Profiles: named item sets, keyed by kind: {"skills": [...], "rules": [...], "extends": [...]}."""
 import json
 from pathlib import Path
 
+from .catalog import ResolveError
 
-class ProfileError(ValueError):
+
+class ProfileError(ResolveError):
     pass
 
 
@@ -12,6 +14,7 @@ def load_profiles(path: Path) -> dict[str, dict]:
 
 
 def resolve(name: str, profiles: dict[str, dict], known: set[str], _seen: tuple = ()) -> set[str]:
+    """Returns `kind/name` keys. `known` = every catalog key."""
     if name in _seen:
         raise ProfileError(f"profile cycle: {' -> '.join((*_seen, name))}")
     if name not in profiles:
@@ -20,7 +23,8 @@ def resolve(name: str, profiles: dict[str, dict], known: set[str], _seen: tuple 
     out: set[str] = set()
     for parent in prof.get("extends", []):
         out |= resolve(parent, profiles, known, (*_seen, name))
-    unknown = set(prof.get("skills", [])) - known
+    own = {f"{kind}/{n}" for kind, names in prof.items() if kind != "extends" for n in names}
+    unknown = own - known
     if unknown:
-        raise ProfileError(f"profile {name!r} has unknown skills: {', '.join(sorted(unknown))}")
-    return out | set(prof.get("skills", []))
+        raise ProfileError(f"profile {name!r} has unknown items: {', '.join(sorted(unknown))}")
+    return out | own

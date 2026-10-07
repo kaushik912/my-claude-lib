@@ -1,26 +1,27 @@
-"""The only module that shells out: turns a Plan into `npx skills` calls."""
-import subprocess
-from pathlib import Path
-
+"""Turns a Plan into Actions (per kind) and executes them."""
+from .kinds import Action, Ctx, Kind
 from .plan import Plan
 
 
-def build_commands(plan: Plan, lib: Path, agent: str = "claude-code", global_: bool = False) -> list[list[str]]:
-    scope = ["-g"] if global_ else []
-    cmds = []
-    if plan.to_add:
-        cmds.append(["npx", "--yes", "skills", "add", str(lib), "-s", *plan.to_add, "-a", agent, "-y", *scope])
-    if plan.to_remove:
-        cmds.append(["npx", "--yes", "skills", "remove", *plan.to_remove, "-a", agent, "-y", *scope])
-    return cmds
+def build_actions(plan: Plan, kinds: list[Kind], ctx: Ctx) -> list[Action]:
+    actions = []
+    for kind in kinds:
+        prefix = f"{kind.name}/"
+        add = tuple(k[len(prefix):] for k in plan.to_add if k.startswith(prefix))
+        rem = tuple(k[len(prefix):] for k in plan.to_remove if k.startswith(prefix))
+        if add:
+            actions += kind.add(add, ctx)
+        if rem:
+            actions += kind.remove(rem, ctx)
+    return actions
 
 
-def run(cmds: list[list[str]], project: Path, dry_run: bool = False, exec_=subprocess.run) -> int:
-    for cmd in cmds:
-        print("$", " ".join(cmd))
+def run(actions: list[Action], dry_run: bool = False) -> int:
+    for a in actions:
+        print("$", a.label)
         if dry_run:
             continue
-        rc = exec_(cmd, cwd=project).returncode
+        rc = a.run()
         if rc:
             return rc
     return 0

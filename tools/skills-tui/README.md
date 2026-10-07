@@ -12,7 +12,8 @@ skills-tui --pick spec bruno --no-tui --yes
 ```
 
 - Installed skills (`.claude/skills/*`) start ticked; unticking one removes it. Skills not in the catalog are never touched.
-- Profiles: `profiles.json` (`skills`, optional `extends`). Picking one pre-ticks its skills.
+- Profiles: `profiles.json`, keyed by kind: `{"skills": [...], "rules": [...], "extends": [...]}`. Picking one pre-ticks its items.
+- Add a kind (rules, commands, agents): write `skills_tui/kinds/<x>.py` implementing `Kind` (`catalog`, `installed`, `add`, `remove` -> `Action`s; copy or shell out), add it to `KINDS` in `kinds/__init__.py`. Core is untouched; see `tests/test_extension.py`. Items are `kind/name` keys; bare names work in `--pick` when unambiguous.
 - Flags: `--agent`, `--global`, `--dry-run`, `--yes`.
-- Modules: `catalog`, `profiles`, `installed`, `plan` (pure) · `runner` (shells out) · `tui`, `cli`.
+- Modules: `kinds/` (extension seam; `skills` is the only kind so far), `catalog`, `profiles`, `plan` (pure) · `runner` · `tui`, `cli`.
 - Tests: `.venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest`.
