@@ -4,7 +4,8 @@ import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { resolveConfig } from '../src/config.js';
-import { install, pull, push, refreshVendored, status, uninstall, vendoredSkills } from '../src/commands.js';
+import { adoptSkills, install, pull, push, refreshVendored, status, uninstall, vendoredSkills } from '../src/commands.js';
+import { adoptFiles, installFiles, pullFiles, pushFiles, removeFiles, statusFiles } from '../src/files.js';
 import { npxAdd, npxAddRemote, npxRemove } from '../src/npx.js';
 import { parseSelection } from '../src/pick.js';
 import { listAvailable } from '../src/sources.js';
@@ -15,13 +16,17 @@ project commands (run in the project dir):
   install   lib -> project   (no names = interactive picker)
   pull      lib -> project   (update installed skills; lists new ones)
   push      project -> lib   (only skills in lib/skills; uncommitted)
-  status    project vs lib   (same as pull --dry-run)
+  push --adopt <names>  copy skills made in the project into lib/skills and track them
+  status    project vs lib   (also lists untracked = made in project, and new)
   remove    uninstall skills from the project (files, symlink, lock entry)
 
 lib owner command:
   refresh   re-fetch ONE vendored skill from upstream (remove + add; no name = interactive picker)
 
-options: --dry-run  --force  --lib <dir>
+--kind commands|agents|rules (install/pull/push/status/remove): plain-file copies of
+  <lib>/.claude/<kind>/<name>.md into <project>/.claude/<kind>/, names required, no picker.
+
+options: --dry-run  --force  --adopt  --kind <kind>  --lib <dir>
 env:     SKILL_SYNC_LIB`;
 
 const { values: flags, positionals } = parseArgs({
@@ -29,6 +34,8 @@ const { values: flags, positionals } = parseArgs({
   options: {
     'dry-run': { type: 'boolean' },
     force: { type: 'boolean' },
+    adopt: { type: 'boolean' },
+    kind: { type: 'string' },
     lib: { type: 'string' },
     help: { type: 'boolean', short: 'h' },
   },
@@ -74,6 +81,12 @@ async function main() {
   const projectDir = process.cwd();
   const opts = { cfg, projectDir, names, dryRun: flags['dry-run'], force: flags.force, add: npxAdd, remove: npxRemove, addRemote: npxAddRemote };
 
+  if (flags.kind && flags.kind !== 'skills') {
+    const fileOps = { install: installFiles, pull: pullFiles, push: flags.adopt ? adoptFiles : pushFiles, status: statusFiles, remove: removeFiles };
+    if (!fileOps[command]) throw new Error(`${command} does not support --kind ${flags.kind}`);
+    return print(fileOps[command]({ ...opts, kind: flags.kind }));
+  }
+
   switch (command) {
     case 'refresh': {
       if (names.length > 1) throw new Error('refresh takes one skill at a time');
@@ -81,7 +94,7 @@ async function main() {
       return print(refreshVendored({ ...opts, name }));
     }
     case 'pull': return print(pull(opts));
-    case 'push': return print(push(opts));
+    case 'push': return print(flags.adopt ? adoptSkills(opts) : push(opts));
     case 'status': return print(status(opts));
     case 'remove': return print(uninstall(opts));
     case 'install': {

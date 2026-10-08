@@ -35,10 +35,23 @@ Project commands run from the **project** dir. All take optional skill names, `-
 |---|---|
 | `install [skills...]` | lib -> project. Mine come from `skills/`, vendored from `registry/.agents/skills/`. No names = numbered picker. |
 | `pull` | lib -> project. Updates installed skills that changed upstream; also lists skills in lib you haven't installed (`new`). |
-| `status` | per-skill state of the project vs lib, plus `new` skills. Read-only. |
+| `status` | per-skill state of the project vs lib, plus `untracked` (made in the project, not in lock) and `new` skills. Read-only. |
 | `remove <names...>` | uninstall from the project (`skills remove <name> -y`: files, `.claude` symlink, lock entry). Errors if not installed. `--dry-run` reports only. Also clears `missing-upstream` leftovers. |
+| `push --adopt <names>` | project -> lib for skills/files made in the project (shown as `untracked` by `status`). Copies into `skills/` (or `.claude/<kind>/`), tracks them in the project. Refuses names already in lib unless `--force`. Skills: add to a `marketplace.json` bundle after. |
 | `push` | project -> lib. Copies locally edited skills into `skills/` (uncommitted; review with `git diff`). |
 | `refresh` | lib owner only. Re-fetches ONE vendored skill from upstream: reads `source` from the lock, then `skills remove <name> -y` + `skills add <source> --skill <name> -y` in `registry/`. No name = interactive picker. `--dry-run` prints the commands only. If add fails after remove, the error shows the restore command. |
+
+### Commands / agents / rules (`--kind`)
+
+`install|pull|push|status|remove --kind commands|agents|rules` copies single `.md` files from `<lib>/.claude/<kind>/` to `<project>/.claude/<kind>/` (real copies, project scope only). Names are required (no picker); `--dry-run` / `--force` / `push --adopt` behave as for skills. Tracked in `<project>/.claude/claude-lib-lock.json` (`{ files: { "rules/spring": { hash } } }`); states are the same as below. `install` refuses to overwrite an existing file without `--force`.
+
+```bash
+skill-sync install --kind rules security spring
+skill-sync status --kind rules
+skill-sync pull --kind rules && skill-sync push --kind rules
+```
+
+Code: `src/files.js` (tests: `test/files.test.js`).
 
 ### Typical flows
 
