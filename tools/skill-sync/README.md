@@ -16,7 +16,7 @@ my-claude-lib/registry/.agents/skills/<s>  (vendored)   /                       
 
 ## Requirements
 
-Node >= 20. One dependency: the `skills` CLI, pinned in `package.json` (`./install.sh` runs `npm install`; ~0.1s per call). The tool always uses this local copy (no global or `npx` fallback; if missing it errors with "run npm install"). Bump the pinned version deliberately: `skill-sync` relies on the CLI's `computedHash` algorithm and install layout (the e2e test catches a break).
+Node >= 20.12. Two dependencies, both pinned in `package.json`: the `skills` CLI and `@clack/prompts` (TUI prompts only; loaded lazily, so every flag-driven command works without it). The `skills` CLI (`./install.sh` runs `npm install`; ~0.1s per call). The tool always uses this local copy (no global or `npx` fallback; if missing it errors with "run npm install"). Bump the pinned version deliberately: `skill-sync` relies on the CLI's `computedHash` algorithm and install layout (the e2e test catches a break).
 
 ## Setup
 
@@ -27,15 +27,25 @@ Node >= 20. One dependency: the `skills` CLI, pinned in `package.json` (`./insta
 
 Lib location (flag > env > default): `--lib` > `SKILL_SYNC_LIB` > the repo this tool lives in.
 
+## Interactive TUI
+
+`skill-sync` with no arguments in a terminal opens a prompt-flow TUI (non-TTY or any args = the normal CLI):
+
+1. status summary -> pick an action (Install / Pull / Push / Remove; only actions with something to do are offered)
+2. multi-select items across skills, commands, agents and rules (`kind/name`); Install also offers `marketplace.json` bundles
+3. dry-run preview with diffs (pull/push/remove), confirm, apply
+
+It is a thin view: it calls the same `dispatch` / `withDiff` as the flags (`src/tui.js`, clack adapter in `src/ui-clack.js`), so nothing is TUI-only. Push on an `untracked` item adopts it (like `push --adopt`). Selecting a `conflict` on Pull overwrites local edits (the confirm says so).
+
 ## Commands
 
-Project commands run from the **project** dir. All take optional skill names, `--dry-run`, `--force`.
+Project commands run from the **project** dir. All take optional skill names, `--dry-run`, `--force`. `--diff` (with `--dry-run`, for `pull`/`push`/`remove`, any `--kind`) prints a line diff under each row that would change (pure Node, no `diff`/`git` needed): pull = project -> lib version, push = lib -> project, remove = files that would be lost.
 
 | Command | Does |
 |---|---|
-| `install [skills...]` | lib -> project. Mine come from `skills/`, vendored from `registry/.agents/skills/`. No names = numbered picker. |
+| `install [skills...] [--bundle <name>]` | lib -> project. `--bundle` (repeatable, skills only) adds every skill of a `marketplace.json` bundle to the names. Mine come from `skills/`, vendored from `registry/.agents/skills/`. No names = numbered picker. |
 | `pull` | lib -> project. Updates installed skills that changed upstream; also lists skills in lib you haven't installed (`new`). |
-| `status` | per-skill state of the project vs lib, plus `untracked` (made in the project, not in lock) and `new` skills. Read-only. |
+| `status [--all-kinds]` | per-skill state of the project vs lib, plus `untracked` (made in the project, not in lock) and `new` skills. Read-only. `--all-kinds` lists skills + commands/agents/rules together as `kind/name`. |
 | `remove <names...>` | uninstall from the project (`skills remove <name> -y`: files, `.claude` symlink, lock entry). Errors if not installed. `--dry-run` reports only. Also clears `missing-upstream` leftovers. |
 | `push --adopt <names>` | project -> lib for skills/files made in the project (shown as `untracked` by `status`). Copies into `skills/` (or `.claude/<kind>/`), tracks them in the project. Refuses names already in lib unless `--force`. Skills: add to a `marketplace.json` bundle after. |
 | `push` | project -> lib. Copies locally edited skills into `skills/` (uncommitted; review with `git diff`). |
