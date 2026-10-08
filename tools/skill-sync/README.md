@@ -40,6 +40,18 @@ Project commands run from the **project** dir. All take optional skill names, `-
 | `push` | project -> lib. Copies locally edited skills into `skills/` (uncommitted; review with `git diff`). |
 | `refresh` | lib owner only. Re-fetches ONE vendored skill from upstream: reads `source` from the lock, then `skills remove <name> -y` + `skills add <source> --skill <name> -y` in `registry/`. No name = interactive picker. `--dry-run` prints the commands only. If add fails after remove, the error shows the restore command. |
 
+### Commands / agents / rules (`--kind`)
+
+`install|pull|push|status|remove --kind commands|agents|rules` copies single `.md` files from `<lib>/.claude/<kind>/` to `<project>/.claude/<kind>/` (real copies, project scope only). Names are required (no picker); `--dry-run` / `--force` behave as for skills. Tracked in `<project>/.claude/claude-lib-lock.json` (`{ files: { "rules/spring": { hash } } }`); states are the same as below. `install` refuses to overwrite an existing file without `--force`.
+
+```bash
+skill-sync install --kind rules security spring
+skill-sync status --kind rules
+skill-sync pull --kind rules && skill-sync push --kind rules
+```
+
+Code: `src/files.js` (tests: `test/files.test.js`).
+
 ### Typical flows
 
 ```bash

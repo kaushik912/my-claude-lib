@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { resolveConfig } from '../src/config.js';
 import { install, pull, push, refreshVendored, status, uninstall, vendoredSkills } from '../src/commands.js';
+import { installFiles, pullFiles, pushFiles, removeFiles, statusFiles } from '../src/files.js';
 import { npxAdd, npxAddRemote, npxRemove } from '../src/npx.js';
 import { parseSelection } from '../src/pick.js';
 import { listAvailable } from '../src/sources.js';
@@ -21,7 +22,10 @@ project commands (run in the project dir):
 lib owner command:
   refresh   re-fetch ONE vendored skill from upstream (remove + add; no name = interactive picker)
 
-options: --dry-run  --force  --lib <dir>
+--kind commands|agents|rules (install/pull/push/status/remove): plain-file copies of
+  <lib>/.claude/<kind>/<name>.md into <project>/.claude/<kind>/, names required, no picker.
+
+options: --dry-run  --force  --kind <kind>  --lib <dir>
 env:     SKILL_SYNC_LIB`;
 
 const { values: flags, positionals } = parseArgs({
@@ -29,6 +33,7 @@ const { values: flags, positionals } = parseArgs({
   options: {
     'dry-run': { type: 'boolean' },
     force: { type: 'boolean' },
+    kind: { type: 'string' },
     lib: { type: 'string' },
     help: { type: 'boolean', short: 'h' },
   },
@@ -73,6 +78,12 @@ async function main() {
   const cfg = resolveConfig({ flags, env: process.env, toolDir });
   const projectDir = process.cwd();
   const opts = { cfg, projectDir, names, dryRun: flags['dry-run'], force: flags.force, add: npxAdd, remove: npxRemove, addRemote: npxAddRemote };
+
+  if (flags.kind && flags.kind !== 'skills') {
+    const fileOps = { install: installFiles, pull: pullFiles, push: pushFiles, status: statusFiles, remove: removeFiles };
+    if (!fileOps[command]) throw new Error(`${command} does not support --kind ${flags.kind}`);
+    return print(fileOps[command]({ ...opts, kind: flags.kind }));
+  }
 
   switch (command) {
     case 'refresh': {

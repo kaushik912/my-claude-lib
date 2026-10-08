@@ -12,6 +12,12 @@ function listFiles(root, dir = root) {
   return out;
 }
 
+/** SHA-256 of one file's content, or null if it doesn't exist. */
+export function hashFile(file) {
+  if (!fs.existsSync(file)) return null;
+  return createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
 /**
  * SHA-256 over all files in a skill folder (sorted relative path + content).
  * Matches `computedHash` written by `npx skills` in skills-lock.json.
