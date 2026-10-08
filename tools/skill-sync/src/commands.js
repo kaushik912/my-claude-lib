@@ -25,6 +25,29 @@ function newSkillRows({ cfg, projectDir, names }) {
     .map((s) => ({ name: s.name, state: 'new', action: `not installed (${s.origin}); skill-sync install ${s.name}` }));
 }
 
+/** Skill folders in the project that have no lock entry (made in the project). */
+function untrackedSkillNames(projectDir) {
+  const dir = projectSkillsDir(projectDir);
+  if (!fs.existsSync(dir)) return [];
+  const tracked = new Set(Object.keys(readLockSkills(projectDir)));
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !tracked.has(e.name) && fs.existsSync(path.join(dir, e.name, 'SKILL.md')))
+    .map((e) => e.name);
+}
+
+function untrackedSkillRows({ cfg, projectDir, names }) {
+  return untrackedSkillNames(projectDir)
+    .filter((n) => !names?.length || names.includes(n))
+    .map((name) => ({
+      name,
+      state: 'untracked',
+      action: resolveSource(cfg, name)
+        ? `project only, but name exists in lib; rename, or push --adopt ${name} --force`
+        : `project only; skill-sync push --adopt ${name}`,
+    }));
+}
+
 /** Install skills from their source folders (one `add` call per folder). */
 function addGrouped(cfg, names, projectDir, add) {
   for (const [dir, group] of groupBySource(cfg, names)) add(dir, group, projectDir);
@@ -32,7 +55,10 @@ function addGrouped(cfg, names, projectDir, add) {
 
 /** Per-skill state of the project vs lib, plus skills not installed yet. */
 export function status({ cfg, projectDir, names }) {
-  return [...planProject({ cfg, projectDir, names }), ...newSkillRows({ cfg, projectDir, names })];
+  const untracked = untrackedSkillRows({ cfg, projectDir, names });
+  const clash = new Set(untracked.map((r) => r.name));
+  const fresh = newSkillRows({ cfg, projectDir, names }).filter((r) => !clash.has(r.name));
+  return [...planProject({ cfg, projectDir, names }), ...untracked, ...fresh];
 }
 
 /**
@@ -104,6 +130,28 @@ export function push({ cfg, projectDir, dryRun, force, names }) {
     rows.push({ name, state: 'local', action: dryRun ? 'would-push' : 'pushed' });
   }
   return rows;
+}
+
+/**
+ * project -> lib for skills made in the project (no lock entry): copy into <lib>/skills,
+ * then `add` from lib so the project tracks it. Refuses names already in lib unless `force`.
+ */
+export function adoptSkills({ cfg, projectDir, names, dryRun, force, add }) {
+  if (!names?.length) throw new Error('no items given');
+  const untracked = new Set(untrackedSkillNames(projectDir));
+  const notUntracked = names.filter((n) => !untracked.has(n));
+  if (notUntracked.length) throw new Error(`not untracked in project: ${notUntracked.join(', ')}`);
+  const clash = names.filter((n) => resolveSource(cfg, n));
+  if (clash.length && !force) throw new Error(`exists in lib: ${clash.join(', ')} (--force to overwrite)`);
+  return names.map((name) => {
+    if (!dryRun) {
+      const libDir = path.join(cfg.libSkills, name);
+      fs.rmSync(libDir, { recursive: true, force: true });
+      fs.cpSync(path.join(projectSkillsDir(projectDir), name), libDir, { recursive: true });
+      add(cfg.libSkills, [name], projectDir);
+    }
+    return { name, state: 'untracked', action: dryRun ? 'would-adopt' : 'adopted (add it to a marketplace.json bundle)' };
+  });
 }
 
 /** Skill names in lib's lock that came from upstream (not local paths). */

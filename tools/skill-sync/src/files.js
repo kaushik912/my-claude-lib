@@ -68,10 +68,33 @@ function newRows({ cfg, projectDir, kind, names }) {
     .map((name) => ({ name, state: 'new', action: `not installed; skill-sync install --kind ${kind} ${name}` }));
 }
 
-/** Per-item state of the project vs lib, plus items not installed yet. */
+/** Files in the project's .claude/<kind>/ that have no lock entry (made in the project). */
+function untrackedNames(projectDir, kind) {
+  const dir = path.join(projectDir, '.claude', kind);
+  if (!fs.existsSync(dir)) return [];
+  const tracked = new Set(trackedNames(projectDir, kind));
+  return fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).filter((n) => !tracked.has(n));
+}
+
+function untrackedRows({ cfg, projectDir, kind, names }) {
+  return untrackedNames(projectDir, kind)
+    .filter((n) => !names?.length || names.includes(n))
+    .map((name) => ({
+      name,
+      state: 'untracked',
+      action: fs.existsSync(libPath(cfg, kind, name))
+        ? `project only, but name exists in lib; rename, or push --adopt --kind ${kind} ${name} --force`
+        : `project only; skill-sync push --adopt --kind ${kind} ${name}`,
+    }));
+}
+
+/** Per-item state of the project vs lib, plus untracked and not-installed items. */
 export function statusFiles({ cfg, projectDir, kind, names }) {
   assertKind(kind);
-  return [...planFiles({ cfg, projectDir, kind, names }), ...newRows({ cfg, projectDir, kind, names })];
+  const untracked = untrackedRows({ cfg, projectDir, kind, names });
+  const clash = new Set(untracked.map((r) => r.name));
+  const fresh = newRows({ cfg, projectDir, kind, names }).filter((r) => !clash.has(r.name));
+  return [...planFiles({ cfg, projectDir, kind, names }), ...untracked, ...fresh];
 }
 
 /** lib -> project, first install. Refuses to overwrite an existing file unless `force`. */
@@ -126,6 +149,25 @@ export function pushFiles({ cfg, projectDir, kind, names, dryRun, force }) {
     }
   }
   return rows;
+}
+
+/** project -> lib for files made in the project (no lock entry); tracks them afterwards. */
+export function adoptFiles({ cfg, projectDir, kind, names, dryRun, force }) {
+  assertKind(kind);
+  if (!names?.length) throw new Error('no items given');
+  const untracked = new Set(untrackedNames(projectDir, kind));
+  const notUntracked = names.filter((n) => !untracked.has(n));
+  if (notUntracked.length) throw new Error(`not untracked in project: ${notUntracked.join(', ')}`);
+  const clash = names.filter((n) => fs.existsSync(libPath(cfg, kind, n)));
+  if (clash.length && !force) throw new Error(`exists in lib: ${clash.join(', ')} (--force to overwrite)`);
+  const lock = readLock(projectDir);
+  for (const name of names) {
+    if (dryRun) continue;
+    copyFile(projPath(projectDir, kind, name), libPath(cfg, kind, name));
+    lock[`${kind}/${name}`] = { hash: hashFile(libPath(cfg, kind, name)) };
+  }
+  if (!dryRun) writeLock(projectDir, lock);
+  return names.map((name) => ({ name, state: 'untracked', action: dryRun ? 'would-adopt' : 'adopted' }));
 }
 
 /** Delete installed items (file + lock entry). */

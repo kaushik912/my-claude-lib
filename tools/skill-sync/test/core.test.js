@@ -6,7 +6,7 @@ import { hashDir } from '../src/hash.js';
 import { classify } from '../src/plan.js';
 import { parseSelection } from '../src/pick.js';
 import { listAvailable } from '../src/sources.js';
-import { install, pull, push, refreshVendored, status, uninstall } from '../src/commands.js';
+import { adoptSkills, install, pull, push, refreshVendored, status, uninstall } from '../src/commands.js';
 import { fakeAdd, tmpWorld, writeLockEntry, writeSkill } from './helpers.js';
 
 describe('hashDir', () => {
@@ -188,6 +188,59 @@ describe('push (project -> lib)', () => {
     assert.equal(fs.readFileSync(path.join(w.cfg.libSkills, 'spec/SKILL.md'), 'utf8'), 'lib-edit');
     push({ cfg: w.cfg, projectDir: w.projectDir, force: true });
     assert.equal(fs.readFileSync(path.join(w.cfg.libSkills, 'spec/SKILL.md'), 'utf8'), 'proj-edit');
+  });
+});
+
+describe('untracked skills + adopt', () => {
+  let w, f;
+  beforeEach(() => {
+    w = tmpWorld();
+    f = fakeAdd();
+    writeSkill(w.cfg.libSkills, 'spec', 'v1');
+    install({ cfg: w.cfg, projectDir: w.projectDir, names: ['spec'], add: f.add });
+    writeSkill(path.join(w.projectDir, '.agents/skills'), 'mine', 'brand new');
+  });
+  afterEach(() => w.cleanup());
+
+  it('givenSkillMadeInProject_whenStatus_thenListedUntracked', () => {
+    const row = status({ cfg: w.cfg, projectDir: w.projectDir }).find((r) => r.name === 'mine');
+    assert.equal(row.state, 'untracked');
+    assert.match(row.action, /push --adopt mine/);
+  });
+
+  it('givenUntrackedSameNameAsLibSkill_whenStatus_thenUntrackedOnlyNotAlsoNew', () => {
+    writeSkill(w.cfg.libSkills, 'mine', 'lib version');
+    const rows = status({ cfg: w.cfg, projectDir: w.projectDir }).filter((r) => r.name === 'mine');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].state, 'untracked');
+    assert.match(rows[0].action, /exists in lib/);
+  });
+
+  it('givenUntracked_whenAdopt_thenCopiedToLibAndTracked', () => {
+    const rows = adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['mine'], add: f.add });
+    assert.match(rows[0].action, /^adopted/);
+    assert.equal(fs.readFileSync(path.join(w.cfg.libSkills, 'mine/SKILL.md'), 'utf8'), 'brand new');
+    assert.ok(!status({ cfg: w.cfg, projectDir: w.projectDir }).some((r) => r.state === 'untracked'));
+    assert.equal(status({ cfg: w.cfg, projectDir: w.projectDir }).find((r) => r.name === 'mine').state, 'in-sync');
+  });
+
+  it('givenDryRun_whenAdopt_thenLibUntouched', () => {
+    const rows = adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['mine'], dryRun: true, add: f.add });
+    assert.equal(rows[0].action, 'would-adopt');
+    assert.ok(!fs.existsSync(path.join(w.cfg.libSkills, 'mine')));
+  });
+
+  it('givenNameExistsInLib_whenAdopt_thenRefusedUnlessForce', () => {
+    writeSkill(w.cfg.libSkills, 'mine', 'lib version');
+    assert.throws(() => adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['mine'], add: f.add }), /exists in lib: mine/);
+    assert.equal(fs.readFileSync(path.join(w.cfg.libSkills, 'mine/SKILL.md'), 'utf8'), 'lib version');
+    adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['mine'], force: true, add: f.add });
+    assert.equal(fs.readFileSync(path.join(w.cfg.libSkills, 'mine/SKILL.md'), 'utf8'), 'brand new');
+  });
+
+  it('givenTrackedOrUnknownOrNoNames_whenAdopt_thenErrors', () => {
+    assert.throws(() => adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['spec'], add: f.add }), /not untracked in project: spec/);
+    assert.throws(() => adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: [], add: f.add }), /no items given/);
   });
 });
 

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { hashFile } from '../src/hash.js';
-import { installFiles, pullFiles, pushFiles, removeFiles, statusFiles } from '../src/files.js';
+import { adoptFiles, installFiles, pullFiles, pushFiles, removeFiles, statusFiles } from '../src/files.js';
 import { tmpWorld } from './helpers.js';
 
 const libFile = (w, kind, name) => path.join(w.cfg.lib, '.claude', kind, `${name}.md`);
@@ -230,5 +230,62 @@ describe('file kinds (commands / agents / rules)', () => {
 
   it('givenUnknownKind_whenInstall_thenErrors', () => {
     assert.throws(() => installFiles({ ...base, kind: 'hooks', names: ['x'] }), /unknown kind: hooks/);
+  });
+
+  // untracked + adopt
+  it('givenFileMadeInProject_whenStatus_thenListedUntracked', () => {
+    installFiles({ ...base, names: ['security'] });
+    write(projFile(w, 'rules', 'mine'), 'brand new');
+
+    const row = statusFiles(base).find((r) => r.name === 'mine');
+
+    assert.equal(row.state, 'untracked');
+    assert.match(row.action, /push --adopt --kind rules mine/);
+  });
+
+  it('givenUntrackedSameNameAsLibFile_whenStatus_thenUntrackedOnlyNotAlsoNew', () => {
+    write(projFile(w, 'rules', 'spring'), 'mine');
+
+    const rows = statusFiles(base).filter((r) => r.name === 'spring');
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].state, 'untracked');
+    assert.match(rows[0].action, /exists in lib/);
+  });
+
+  it('givenUntracked_whenAdopt_thenCopiedToLibAndTracked', () => {
+    write(projFile(w, 'rules', 'mine'), 'brand new');
+
+    const rows = adoptFiles({ ...base, names: ['mine'] });
+
+    assert.equal(rows[0].action, 'adopted');
+    assert.equal(read(libFile(w, 'rules', 'mine')), 'brand new');
+    assert.equal(stateOf(statusFiles(base), 'mine'), 'in-sync');
+  });
+
+  it('givenDryRun_whenAdopt_thenLibUntouched', () => {
+    write(projFile(w, 'rules', 'mine'), 'brand new');
+
+    const rows = adoptFiles({ ...base, names: ['mine'], dryRun: true });
+
+    assert.equal(actionOf(rows, 'mine'), 'would-adopt');
+    assert.ok(!fs.existsSync(libFile(w, 'rules', 'mine')));
+  });
+
+  it('givenNameExistsInLib_whenAdopt_thenRefusedUnlessForce', () => {
+    write(projFile(w, 'rules', 'spring'), 'mine');
+
+    assert.throws(() => adoptFiles({ ...base, names: ['spring'] }), /exists in lib: spring/);
+    assert.equal(read(libFile(w, 'rules', 'spring')), 'spring v1');
+
+    adoptFiles({ ...base, names: ['spring'], force: true });
+    assert.equal(read(libFile(w, 'rules', 'spring')), 'mine');
+  });
+
+  it('givenTrackedOrNoNames_whenAdopt_thenErrors', () => {
+    installFiles({ ...base, names: ['security'] });
+
+    assert.throws(() => adoptFiles({ ...base, names: ['security'] }), /not untracked in project: security/);
+    assert.throws(() => adoptFiles({ ...base, names: [] }), /no items given/);
   });
 });
