@@ -1,0 +1,20 @@
+{
+  "name": "skill-sync",
+  "version": "0.1.0",
+  "description": "Wrapper over `npx skills` (local mode) to sync my skills: lib -> registry -> projects, and back",
+  "type": "module",
+  "bin": {
+    "skill-sync": "./bin/skill-sync.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "test:e2e": "SKILL_SYNC_E2E=1 node --test test/e2e.test.js"
+  },
+  "dependencies": {
+    "skills": "1.7.1"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

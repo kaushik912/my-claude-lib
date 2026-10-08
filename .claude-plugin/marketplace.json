@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "my-claude-lib",
   "owner": {
     "name": "kaushik912"
@@ -9,19 +10,19 @@
   "plugins": [
     {
       "name": "java-debugging",
-      "description": "Debug and profile running Java/Spring Boot apps: jdb attach, live breakpoints, JFR recording and analysis, hypothesis-driven debug mode",
+      "version": "0.2.0",
+      "description": "Debug and profile running Java/Spring Boot apps: jdb attach, JFR recording and analysis",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/jdb-attach",
-        "./skills/debug-live",
-        "./skills/debug-mode",
         "./skills/jfr",
         "./skills/jfr-analyze"
       ]
     },
     {
       "name": "spec-ticketing",
+      "version": "0.1.0",
       "description": "Spec-driven workflows and ticketing: interactive spec/plan/tasks/TDD, split a big request into dependent tickets, run them one by one (resumable from disk), plus unattended feature and bug-fix tickets",
       "source": "./",
       "strict": false,
@@ -35,29 +36,19 @@
     },
     {
       "name": "api-testing",
-      "description": "API testing with Bruno: build and debug collections, convert Postman scripts, brainstorm test scenarios",
+      "version": "0.2.0",
+      "description": "API testing with Bruno: convert Postman scripts, brainstorm and implement test scenarios",
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/bruno",
         "./skills/pm2bruno",
         "./skills/e2e-grill",
         "./skills/e2e-implement"
       ]
     },
     {
-      "name": "caveman",
-      "description": "Ultra-compressed communication mode, commit messages, and token usage stats",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./skills/caveman",
-        "./skills/caveman-commit",
-        "./skills/caveman-stats"
-      ]
-    },
-    {
       "name": "data-tools",
+      "version": "0.1.0",
       "description": "Query Jira and MySQL from the CLI without MCP servers",
       "source": "./",
       "strict": false,
@@ -68,17 +59,18 @@
     },
     {
       "name": "everyday-helpers",
+      "version": "0.2.0",
       "description": "Plain-language explanations and free-tier LLM picks",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/cavewhat",
-        "./skills/freemodelpicker",
-        "./skills/karpathy-guidelines"
+        "./skills/freemodelpicker"
       ]
     },
     {
       "name": "code-analysis",
+      "version": "0.1.0",
       "description": "Fast codebase analysis via the codebase-memory-mcp code graph: architecture, callers, impact of changes",
       "source": "./",
       "strict": false,
