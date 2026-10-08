@@ -27,6 +27,37 @@ export function buildChoices(action, rows, bundles) {
   return [...offered, ...items];
 }
 
+/** Choices -> { kind: choices }, in order of first appearance. Bundles fold into `skills`. */
+export function groupByKind(choices) {
+  const groups = {};
+  for (const c of choices) {
+    const kind = c.value.startsWith('bundle:') ? 'skills' : c.value.split('/')[0];
+    (groups[kind] ??= []).push(c);
+  }
+  return groups;
+}
+
+/** Pick which choices to show: kind picker (skipped for one kind), then flat or grouped multiselect. */
+async function selectValues(ui, action, choices) {
+  const byKind = groupByKind(choices);
+  const kinds = Object.keys(byKind);
+  const message = `${ACTIONS[action].label} which?`;
+  let kind = kinds[0];
+  if (kinds.length > 1) {
+    kind = await ui.select({
+      message: 'Which kind?',
+      options: [{ value: 'all', label: 'All', hint: `${choices.length}` }, ...kinds.map((k) => ({ value: k, label: k, hint: `${byKind[k].length}` }))],
+    });
+    if (!kind) return null;
+  }
+  if (kind !== 'all') return ui.multiselect({ message, options: byKind[kind] });
+  const isBundle = (c) => c.value.startsWith('bundle:');
+  const bundles = choices.filter(isBundle);
+  const options = { ...(bundles.length && { bundles }) };
+  for (const k of kinds) options[k] = byKind[k].filter((c) => !isBundle(c));
+  return ui.groupMultiselect({ message, options });
+}
+
 /**
  * Selected values -> dispatch calls: [{ kind, names, adopt }].
  * `bundle:<n>` expands to its not-yet-installed skills.
@@ -72,7 +103,7 @@ export async function runTui({ base, ui }) {
   const action = await ui.select({ message: 'What do you want to do?', options });
   if (!action) return ui.outro('cancelled');
 
-  const selected = await ui.multiselect({ message: `${ACTIONS[action].label} which?`, options: buildChoices(action, rows, bundles) });
+  const selected = await selectValues(ui, action, buildChoices(action, rows, bundles));
   if (!selected?.length) return ui.outro('cancelled');
   const calls = buildCalls(action, selected, rows, base.cfg);
 

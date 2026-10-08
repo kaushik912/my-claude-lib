@@ -32,7 +32,7 @@ Lib location (flag > env > default): `--lib` > `SKILL_SYNC_LIB` > the repo this 
 `skill-sync` with no arguments in a terminal opens a prompt-flow TUI (non-TTY or any args = the normal CLI):
 
 1. status summary -> pick an action (Install / Pull / Push / Remove; only actions with something to do are offered)
-2. multi-select items across skills, commands, agents and rules (`kind/name`); Install also offers `marketplace.json` bundles
+2. pick a kind (All / skills / commands / agents / rules; skipped if only one kind has items), then multi-select (`kind/name`). a single kind is a flat list you can filter by typing (Tab selects); "All" shows one unfiltered list grouped by kind; Install also offers `marketplace.json` bundles (top group in "All", top of the skills list otherwise)
 3. dry-run preview with diffs (pull/push/remove), confirm, apply
 
 It is a thin view: it calls the same `dispatch` / `withDiff` as the flags (`src/tui.js`, clack adapter in `src/ui-clack.js`), so nothing is TUI-only. Push on an `untracked` item adopts it (like `push --adopt`). Selecting a `conflict` on Pull overwrites local edits (the confirm says so).
