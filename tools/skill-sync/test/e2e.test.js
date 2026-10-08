@@ -5,7 +5,7 @@ import path from 'node:path';
 import { describe, it } from 'node:test';
 import { hashDir } from '../src/hash.js';
 import { readLockSkills } from '../src/lock.js';
-import { install, pull, push, status } from '../src/commands.js';
+import { adoptSkills, install, pull, push, status } from '../src/commands.js';
 import { npxAdd } from '../src/npx.js';
 import { tmpWorld, writeSkill } from './helpers.js';
 
@@ -37,6 +37,22 @@ describe('e2e with real npx skills', { skip: !process.env.SKILL_SYNC_E2E, timeou
       assert.match(fs.readFileSync(path.join(w.cfg.libSkills, 'foo/SKILL.md'), 'utf8'), /v3/);
       assert.equal(status({ cfg: w.cfg, projectDir: w.projectDir })[0].state, 'converged');
       pull({ cfg: w.cfg, projectDir: w.projectDir, add: npxAdd });
+      assert.equal(status({ cfg: w.cfg, projectDir: w.projectDir })[0].state, 'in-sync');
+    } finally {
+      w.cleanup();
+    }
+  });
+
+  it('skill made in project -> adopt copies to lib and real lock tracks it', () => {
+    const w = tmpWorld();
+    try {
+      writeSkill(path.join(w.projectDir, '.agents/skills'), 'mine', { 'SKILL.md': '---\nname: mine\ndescription: test mine\n---\nhi\n' });
+      assert.equal(status({ cfg: w.cfg, projectDir: w.projectDir })[0].state, 'untracked');
+
+      adoptSkills({ cfg: w.cfg, projectDir: w.projectDir, names: ['mine'], add: npxAdd });
+
+      assert.ok(fs.existsSync(path.join(w.cfg.libSkills, 'mine/SKILL.md')));
+      assert.equal(hashDir(path.join(w.projectDir, '.agents/skills/mine')), readLockSkills(w.projectDir).mine.computedHash);
       assert.equal(status({ cfg: w.cfg, projectDir: w.projectDir })[0].state, 'in-sync');
     } finally {
       w.cleanup();
