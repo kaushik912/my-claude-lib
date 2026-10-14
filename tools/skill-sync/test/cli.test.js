@@ -28,7 +28,7 @@ describe('CLI wiring (offline)', () => {
 
     assert.equal(adopt.status, 0, adopt.stderr);
     assert.match(adopt.stdout, /mine\s+untracked\s+adopted/);
-    assert.equal(fs.readFileSync(path.join(w.cfg.lib, '.claude/rules/mine.md'), 'utf8'), 'brand new');
+    assert.equal(fs.readFileSync(path.join(w.cfg.lib, 'claude/rules/mine.md'), 'utf8'), 'brand new');
     assert.match(run('status', '--kind', 'rules').stdout, /mine\s+in-sync/);
   });
 
@@ -61,8 +61,8 @@ describe('status --all-kinds (offline)', () => {
 
   it('givenSkillAndRuleInLib_whenStatusAllKinds_thenBothListedWithKindPrefix', () => {
     writeSkill(w.cfg.libSkills, 'spec', 'a skill');
-    fs.mkdirSync(path.join(w.cfg.lib, '.claude/rules'), { recursive: true });
-    fs.writeFileSync(path.join(w.cfg.lib, '.claude/rules/spec.md'), 'a rule');
+    fs.mkdirSync(path.join(w.cfg.lib, 'claude/rules'), { recursive: true });
+    fs.writeFileSync(path.join(w.cfg.lib, 'claude/rules/spec.md'), 'a rule');
 
     const r = run('status', '--all-kinds');
 

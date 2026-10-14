@@ -28,7 +28,7 @@ lib owner command:
   refresh   re-fetch ONE vendored skill from upstream (remove + add; no name = interactive picker)
 
 --kind commands|agents|rules (install/pull/push/status/remove): plain-file copies of
-  <lib>/.claude/<kind>/<name>.md into <project>/.claude/<kind>/, names required, no picker.
+  <lib>/claude/<kind>/<name>.md into <project>/.claude/<kind>/, names required, no picker.
 
 options: --dry-run  --force  --adopt  --kind <kind>  --all-kinds (status only)  --bundle <name> (install only, repeatable)  --diff (with --dry-run: pull/push/remove)  --lib <dir>
 env:     SKILL_SYNC_LIB`;

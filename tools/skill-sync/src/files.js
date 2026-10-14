@@ -4,7 +4,7 @@ import { hashFile } from './hash.js';
 import { classify } from './plan.js';
 
 /**
- * Single-file kinds (commands, agents, rules): <lib>/.claude/<kind>/<name>.md
+ * Single-file kinds (commands, agents, rules): <lib>/claude/<kind>/<name>.md
  * copied to <project>/.claude/<kind>/<name>.md and tracked in
  * <project>/.claude/claude-lib-lock.json as { files: { "<kind>/<name>": { hash } } }.
  */
@@ -16,7 +16,7 @@ function assertKind(kind) {
   if (!FILE_KINDS.includes(kind)) throw new Error(`unknown kind: ${kind} (one of ${FILE_KINDS.join(', ')})`);
 }
 
-const libPath = (cfg, kind, name) => path.join(cfg.lib, '.claude', kind, `${name}.md`);
+const libPath = (cfg, kind, name) => path.join(cfg.lib, 'claude', kind, `${name}.md`);
 const projPath = (projectDir, kind, name) => path.join(projectDir, '.claude', kind, `${name}.md`);
 const lockPath = (projectDir) => path.join(projectDir, '.claude', 'claude-lib-lock.json');
 
@@ -44,7 +44,7 @@ function trackedNames(projectDir, kind, names) {
 }
 
 function libNames(cfg, kind) {
-  const dir = path.join(cfg.lib, '.claude', kind);
+  const dir = path.join(cfg.lib, 'claude', kind);
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).sort();
 }

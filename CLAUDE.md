@@ -8,7 +8,7 @@ Personal library of coding-agent skills, agents, commands and rules — content,
 
 - `skills/<name>/SKILL.md` — canonical home of my skills. Edit here only. No `.agents/` or `.claude/skills/` here.
 - `registry/` — vendored (third-party) skills + `skills-lock.json`. Add with `npx skills add <repo> --skill <name> -a claude-code github-copilot -y` run inside `registry/`; update with `skill-sync refresh`. Don't hand-edit skill files.
-- `.claude/{agents,commands,rules}` — real files. Copy into projects with `skill-sync <cmd> --kind commands|agents|rules <names>`.
+- `claude/{agents,commands,rules}` — real files, deliberately outside `.claude/` so they don't load into this repo's own context. Copy into projects (`<project>/.claude/<kind>/`) with `skill-sync <cmd> --kind commands|agents|rules <names>`.
 - `.claude-plugin/marketplace.json` — groups skills into installable plugin bundles, each with a `version`. Bump it when a bundle's skills change. **When creating a skill, add it to the matching bundle in the same change** (new bundle if none fits). Every dir in `skills/` must appear in some bundle.
 
 ## Tools

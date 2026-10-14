@@ -32,7 +32,7 @@ Lib location (flag > env > default): `--lib` > `SKILL_SYNC_LIB` > the repo this 
 `skill-sync` with no arguments in a terminal opens a prompt-flow TUI (non-TTY or any args = the normal CLI):
 
 1. status summary -> pick an action (Install / Pull / Push / Remove; only actions with something to do are offered)
-2. multi-select items across skills, commands, agents and rules (`kind/name`); Install also offers `marketplace.json` bundles
+2. pick a kind (All / skills / commands / agents / rules; skipped if only one kind has items), then multi-select (`kind/name`). a single kind is a flat list you can filter by typing (Tab selects); "All" shows one unfiltered list grouped by kind; Install also offers `marketplace.json` bundles (top group in "All", top of the skills list otherwise)
 3. dry-run preview with diffs (pull/push/remove), confirm, apply
 
 It is a thin view: it calls the same `dispatch` / `withDiff` as the flags (`src/tui.js`, clack adapter in `src/ui-clack.js`), so nothing is TUI-only. Push on an `untracked` item adopts it (like `push --adopt`). Selecting a `conflict` on Pull overwrites local edits (the confirm says so).
@@ -47,13 +47,13 @@ Project commands run from the **project** dir. All take optional skill names, `-
 | `pull` | lib -> project. Updates installed skills that changed upstream; also lists skills in lib you haven't installed (`new`). |
 | `status [--all-kinds]` | per-skill state of the project vs lib, plus `untracked` (made in the project, not in lock) and `new` skills. Read-only. `--all-kinds` lists skills + commands/agents/rules together as `kind/name`. |
 | `remove <names...>` | uninstall from the project (`skills remove <name> -y`: files, `.claude` symlink, lock entry). Errors if not installed. `--dry-run` reports only. Also clears `missing-upstream` leftovers. |
-| `push --adopt <names>` | project -> lib for skills/files made in the project (shown as `untracked` by `status`). Copies into `skills/` (or `.claude/<kind>/`), tracks them in the project. Refuses names already in lib unless `--force`. Skills: add to a `marketplace.json` bundle after. |
+| `push --adopt <names>` | project -> lib for skills/files made in the project (shown as `untracked` by `status`). Copies into `skills/` (or `claude/<kind>/`), tracks them in the project. Refuses names already in lib unless `--force`. Skills: add to a `marketplace.json` bundle after. |
 | `push` | project -> lib. Copies locally edited skills into `skills/` (uncommitted; review with `git diff`). |
 | `refresh` | lib owner only. Re-fetches ONE vendored skill from upstream: reads `source` from the lock, then `skills remove <name> -y` + `skills add <source> --skill <name> -y` in `registry/`. No name = interactive picker. `--dry-run` prints the commands only. If add fails after remove, the error shows the restore command. |
 
 ### Commands / agents / rules (`--kind`)
 
-`install|pull|push|status|remove --kind commands|agents|rules` copies single `.md` files from `<lib>/.claude/<kind>/` to `<project>/.claude/<kind>/` (real copies, project scope only). Names are required (no picker); `--dry-run` / `--force` / `push --adopt` behave as for skills. Tracked in `<project>/.claude/claude-lib-lock.json` (`{ files: { "rules/spring": { hash } } }`); states are the same as below. `install` refuses to overwrite an existing file without `--force`.
+`install|pull|push|status|remove --kind commands|agents|rules` copies single `.md` files from `<lib>/claude/<kind>/` to `<project>/.claude/<kind>/` (real copies, project scope only). Names are required (no picker); `--dry-run` / `--force` / `push --adopt` behave as for skills. Tracked in `<project>/.claude/claude-lib-lock.json` (`{ files: { "rules/spring": { hash } } }`); states are the same as below. `install` refuses to overwrite an existing file without `--force`.
 
 ```bash
 skill-sync install --kind rules security spring

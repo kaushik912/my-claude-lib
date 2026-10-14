@@ -78,7 +78,7 @@ describe('withDiff (dry-run previews)', () => {
   });
 
   it('givenRuleUpdatedInLib_whenPullDryRunDiff_thenShowsFileDiff', () => {
-    const lib = path.join(w.cfg.lib, '.claude/rules/r.md');
+    const lib = path.join(w.cfg.lib, 'claude/rules/r.md');
     fs.mkdirSync(path.dirname(lib), { recursive: true });
     fs.writeFileSync(lib, 'one');
     installFiles({ ...ctx, kind: 'rules', names: ['r'] });
@@ -106,7 +106,7 @@ describe('--diff flag', () => {
   });
 
   it('givenRuleLocalEdit_whenPushDryRunDiff_thenPrintsIndentedDiff', () => {
-    const lib = path.join(w.cfg.lib, '.claude/rules/r.md');
+    const lib = path.join(w.cfg.lib, 'claude/rules/r.md');
     fs.mkdirSync(path.dirname(lib), { recursive: true });
     fs.writeFileSync(lib, 'one');
     assert.equal(run('install', '--kind', 'rules', 'r').status, 0);
