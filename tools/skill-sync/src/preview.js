@@ -9,7 +9,7 @@ export const DIFF_COMMANDS = ['pull', 'push', 'remove'];
 function sides({ cfg, projectDir, command, kind, name }) {
   const skills = kind === 'skills';
   const proj = skills ? path.join(projectSkillsDir(projectDir), name) : path.join(projectDir, '.claude', kind, `${name}.md`);
-  const lib = skills ? path.join(cfg.libSkills, name) : path.join(cfg.lib, '.claude', kind, `${name}.md`);
+  const lib = skills ? path.join(cfg.libSkills, name) : path.join(cfg.lib, 'claude', kind, `${name}.md`);
   if (command === 'remove') return [proj, null];
   if (command === 'push') return [lib, proj]; // push and push --adopt both write project -> lib
   if (!skills) return [proj, lib]; // pull

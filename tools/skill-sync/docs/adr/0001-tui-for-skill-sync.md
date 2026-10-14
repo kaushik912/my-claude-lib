@@ -66,6 +66,18 @@ kinds; diff preview before pull/push/remove; bundle-aware install.
   Pseudo-terminal smoke done once by hand (Python `pty`); no tmux/node-pty in the repo.
 - Still deferred: bundles for agents/rules (needs new metadata); dashboard mode.
 
+## Kind grouping (2026-10-08)
+
+Flat multiselect gets long (Install lists every `new` lib item, incl. vendored skills). Decided:
+
+- Kind picker step before the list: All / Skills / Commands / Agents / Rules.
+- "All" shows grouped list (clack `groupMultiselect`, header per kind); a kind shows its flat list.
+- Picker skipped when only one kind has items.
+- Bundles (Install) stay on top: own first group in "All", top of the skills list in the skills view. Bundles count as kind `skills` for the skip rule.
+- Text filter: flat lists use clack `autocompleteMultiselect` (type to filter, Tab selects). Clack has no grouped autocomplete, so "All" stays unfiltered; pick a kind to filter.
+- TUI stays a thin view: `buildCalls` already groups by kind, so selection handling is unchanged.
+- Status: built (`groupByKind`, `selectValues` in `src/tui.js`; `groupMultiselect` in the clack adapter).
+
 ## Implementation order
 
 1. DONE: `src/ops.js` (`dispatch`, `statusAll`) + `status --all-kinds`; `bin` uses it.

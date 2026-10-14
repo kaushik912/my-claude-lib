@@ -5,7 +5,7 @@ Personal library of tested coding-agent skills, agents, commands and rules.
 ## Layout
 
 - `skills/` — all skills (top-level so `gh skill` finds them). `skill-sync` installs them into projects as `.agents/skills/<name>` and `.claude/skills/<name>`.
-- `.claude/{agents,commands,rules}` — Claude Code agents, commands, rules.
+- `claude/{agents,commands,rules}` — Claude Code agents, commands, rules (installed into projects' `.claude/` by `skill-sync --kind`).
 - `tools/skill-sync` — install/pull/push skills between this lib and projects ([README](tools/skill-sync/README.md)).
 - `tools/skill-inventory` — scan a tree for `.claude/skills` / `.agents/skills`; JSON of unique skills per project.
 - `tools/agent-porter` — convert/install agents between Claude and Copilot formats ([README](tools/agent-porter/README.md)).

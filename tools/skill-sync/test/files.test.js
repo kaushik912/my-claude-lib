@@ -6,7 +6,7 @@ import { hashFile } from '../src/hash.js';
 import { adoptFiles, installFiles, pullFiles, pushFiles, removeFiles, statusFiles } from '../src/files.js';
 import { tmpWorld } from './helpers.js';
 
-const libFile = (w, kind, name) => path.join(w.cfg.lib, '.claude', kind, `${name}.md`);
+const libFile = (w, kind, name) => path.join(w.cfg.lib, 'claude', kind, `${name}.md`);
 const projFile = (w, kind, name) => path.join(w.projectDir, '.claude', kind, `${name}.md`);
 const lockFile = (w) => path.join(w.projectDir, '.claude', 'claude-lib-lock.json');
 const write = (file, text) => {
