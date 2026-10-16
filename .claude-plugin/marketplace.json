@@ -59,12 +59,13 @@
     },
     {
       "name": "everyday-helpers",
-      "version": "0.2.0",
-      "description": "Plain-language explanations and free-tier LLM picks",
+      "version": "0.3.0",
+      "description": "Plain-language explanations, free-tier LLM picks, and cheap Claude Code Q&A via Haiku",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/cavewhat",
+        "./skills/cc-guide",
         "./skills/freemodelpicker"
       ]
     },
