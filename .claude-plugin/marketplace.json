@@ -70,6 +70,16 @@
       ]
     },
     {
+      "name": "interview-prep",
+      "version": "0.1.0",
+      "description": "Interview practice: explain a codebase from memory and get graded against the real code",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/explain-drill"
+      ]
+    },
+    {
       "name": "code-analysis",
       "version": "0.1.0",
       "description": "Fast codebase analysis via the codebase-memory-mcp code graph: architecture, callers, impact of changes",
